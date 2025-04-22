@@ -36,7 +36,7 @@ pip install -r requirements.txt
 
 2. **PDFからのJSON生成**
    - PDFファイルを各フォルダ内の `pdf` サブフォルダに配置
-   - システムが自動的にJSONデータを生成
+   - 更新ボタンを押すことで、Geminiにjsonが生成されていないpdfに対応するJSONデータを生成を要求
    - 生成されたJSONは同じフォルダ内の `json` サブフォルダに保存
 
 3. **データの編集**
