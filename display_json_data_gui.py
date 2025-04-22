@@ -152,7 +152,7 @@ def create_tab_content(tab_frame, files):
     canvas.configure(yscrollcommand=scrollbar.set)
     
     # ヘッダー行を作成
-    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他', '編集']
+    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '関連処理', '金額', '編集']
     for i, header in enumerate(headers):
         label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
         label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
@@ -225,7 +225,7 @@ def create_tab_content(tab_frame, files):
         
         # PDFファイルが存在するか確認
         if os.path.exists(pdf_file_path):
-            receipt_text = f"領収書: {pdf_file_name}"
+            receipt_text = f"{json_data.get('title', '領収書')}: {pdf_file_name}"
         else:
             receipt_text = "PDFファイルが見つかりません"
         
@@ -245,7 +245,6 @@ def create_tab_content(tab_frame, files):
             receipt_text,
             '',
             price_display,
-            '',
             f"📝 {os.path.basename(json_file)}"  # 編集ボタンを追加
         ]
         
@@ -267,7 +266,7 @@ def create_tab_content(tab_frame, files):
             def make_copy_command(val=value):
                 def copy_command():
                     # 金額の場合は「円」を除く
-                    if i == 11:  # 金額の列インデックス
+                    if i == 10:  # 金額の列インデックス
                         copy_value = str(val).replace('円', '').strip()
                     else:
                         copy_value = str(val)
@@ -297,7 +296,7 @@ def create_tab_content(tab_frame, files):
                 open_button.configure(command=make_open_pdf_command())
             
             # 編集ボタンの場合は、JSONファイルを開くボタンを追加
-            if i == 12:  # 編集列の場合
+            if i == 11:  # 編集列の場合
                 def make_edit_command(json_path=json_file):
                     def edit_command():
                         edit_json_file(json_path)
