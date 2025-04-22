@@ -113,13 +113,14 @@ def edit_json_file(json_path):
                 # 現在のタブの内容を更新
                 current_tab = notebook.select()
                 tab_frame = notebook.children[current_tab.split('.')[-1]]
+                folder_name = notebook.tab(current_tab)['text']
                 
                 # 既存のウィジェットを削除
                 for widget in tab_frame.winfo_children():
                     widget.destroy()
                 
                 # タブの内容を再描画
-                create_tab_content(tab_frame, folder_files[notebook.tab(current_tab)['text']])
+                create_tab_content(tab_frame, folder_files[folder_name])
                 
             except json.JSONDecodeError:
                 messagebox.showerror("エラー", "無効なJSON形式です")
@@ -313,7 +314,7 @@ def create_tab_content(tab_frame, files):
     scrollbar.pack(side="right", fill="y")
 
 def display_json_data_gui():
-    global root, notebook
+    global root, notebook, folder_files
     root = tk.Tk()
     root.title('JSON データ表示')
     
