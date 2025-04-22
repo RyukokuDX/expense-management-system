@@ -1,0 +1,19 @@
+{
+  "title": "納品書",
+  "issuer": "龍谷大学生活協同組合\n専務理事崎濱誠",
+  "receiver_group": "先端理工学部",
+  "receiver_name": "藤原和将",
+  "total_amount": "3360",
+  "payment_date": "2025/04/14",
+  "items": [
+    {
+      "product_name": "NFCモジュール V3キット",
+      "provider": "Jectse",
+      "model": "XD 00228",
+      "unite_price": "1680",
+      "total_price": "3360",
+      "number": "2",
+      "delivery_date": null
+    }
+  ]
+}

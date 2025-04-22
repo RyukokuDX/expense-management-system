@@ -1,0 +1,19 @@
+{
+  "title": "納品書",
+  "issuer": "龍谷大学生活協同組合",
+  "receiver_group": "先端理工学部",
+  "receiver_name": "藤原和将",
+  "total_amount": "5920",
+  "payment_date": "2025/04/21",
+  "items": [
+    {
+      "product_name": "大人の鉛筆 大人のもちかた先生",
+      "provider": "北星鉛筆",
+      "model": "OMS-680NBP",
+      "unite_price": "740",
+      "total_price": "5920",
+      "number": "8",
+      "delivery_date": null
+    }
+  ]
+}
