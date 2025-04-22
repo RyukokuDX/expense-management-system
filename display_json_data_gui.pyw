@@ -1,14 +1,136 @@
 import os
 import json
+import requests
 import tkinter as tk
 from tkinter import ttk, messagebox
 from datetime import datetime
 from collections import defaultdict
 import webbrowser
 import sys
+import glob
+import google.generativeai as genai
+import re
+import base64
+from PIL import Image
+import io
+from pdf2image import convert_from_path
+from pathlib import Path
+import httpx
 
 # スクリプトのディレクトリを取得
 SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Gemini APIの設定
+GEMINI_API_KEY = os.environ.get('GeminiApiKey')
+if not GEMINI_API_KEY:
+    # 環境変数にAPIキーが設定されていない場合、ここで直接設定
+    # 注意: 本番環境では、APIキーをソースコードに直接記述することは避けてください
+    GEMINI_API_KEY = "YOUR_API_KEY_HERE"  # ここに実際のAPIキーを入力してください
+    print("Warning: Using hardcoded API key. For security reasons, consider using environment variables.")
+
+if GEMINI_API_KEY:
+    genai.configure(api_key=GEMINI_API_KEY)
+    model = genai.GenerativeModel('gemini-1.5-pro-vision')
+else:
+    print("Warning: GeminiApiKey not set. PDFからのJSON自動生成機能は無効です。")
+
+def extract_json_from_pdf_sync(pdf_path):
+    """
+    PDFファイルからJSONデータを抽出する同期関数
+    """
+    try:
+        if not GEMINI_API_KEY:
+            print("Missing GEMINI API key.")
+            return None
+
+        # PDFデータを Base64 に変換
+        with open(pdf_path, 'rb') as f:
+            pdf_data = f.read()
+        pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
+
+        # Gemini API にリクエスト
+        payload = {
+            "contents": [
+                {
+                    "parts": [
+                        {
+                            "text": "領収書または納品書の情報を解析し、購入項目ごとに以下の形式でJSONに構造化してください。ただし、以下の処理を施してください。\n"
+                                    "+ 金額の部分はカンマがあれば除いてください\n"
+                                    "+ 金額が0の項目は無視してください\n\n"
+                                    "{ \"title\": \"領収書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }"
+                        },
+                        {
+                            "inlineData": {
+                                "mimeType": "application/pdf",
+                                "data": pdf_base64
+                            }
+                        }
+                    ]
+                }
+            ]
+        }
+
+        # 同期HTTPリクエスト
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent?key={GEMINI_API_KEY}",
+            headers={"Content-Type": "application/json"},
+            json=payload
+        )
+
+        json_response = response.json()
+
+        if response.status_code != 200:
+            print(f"Gemini API error: {json_response}")
+            return None
+
+        # JSON部分の抽出
+        extracted_text = json_response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
+        extracted_json_match = re.search(r"```json\n([\s\S]+?)\n```", extracted_text)
+
+        if extracted_json_match:
+            extracted_json = json.loads(extracted_json_match.group(1))
+            return extracted_json
+        else:
+            print("No JSON found in response")
+            return None
+
+    except Exception as e:
+        print(f"Error extracting JSON from PDF: {e}")
+        return None
+
+def check_and_generate_json_for_pdfs():
+    """
+    PDFファイルに対応するJSONファイルがない場合、Gemini APIを使用してJSONを生成する
+    """
+    # PDFファイルを検索
+    pdf_files = glob.glob(os.path.join(SCRIPT_DIR, "**", "pdf", "*.pdf"), recursive=True)
+    
+    for pdf_path in pdf_files:
+        # 対応するJSONファイルのパスを生成
+        json_dir = os.path.dirname(os.path.dirname(pdf_path))
+        json_dir = os.path.join(json_dir, "json")
+        pdf_filename = os.path.basename(pdf_path)
+        json_filename = os.path.splitext(pdf_filename)[0] + ".json"
+        json_path = os.path.join(json_dir, json_filename)
+        
+        # JSONファイルが存在しない場合
+        if not os.path.exists(json_path):
+            print(f"JSON file not found for PDF: {pdf_path}")
+            
+            # extract_json_from_pdf_sync関数を使用してJSONを生成
+            generated_json = extract_json_from_pdf_sync(pdf_path)
+            
+            if generated_json:
+                # JSONディレクトリが存在しない場合は作成
+                os.makedirs(json_dir, exist_ok=True)
+                
+                # JSONファイルを保存
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(generated_json, f, ensure_ascii=False, indent=2)
+                
+                print(f"Generated JSON file: {json_path}")
+            else:
+                print(f"Failed to generate JSON for PDF: {pdf_path}")
 
 def list_json_files(directory):
     json_files = []
@@ -316,6 +438,72 @@ def create_tab_content(tab_frame, files):
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
+class JsonViewerApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("JSON Viewer with Gemini Analysis")
+        self.root.geometry("800x600")
+        
+        # Create main frame
+        main_frame = ttk.Frame(root, padding="10")
+        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Create file list
+        self.file_listbox = tk.Listbox(main_frame, width=40, height=10)
+        self.file_listbox.grid(row=0, column=0, rowspan=2, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Add scrollbar to file list
+        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.file_listbox.yview)
+        scrollbar.grid(row=0, column=1, rowspan=2, sticky=(tk.N, tk.S))
+        self.file_listbox.configure(yscrollcommand=scrollbar.set)
+        
+        # Create text display area
+        self.text_display = tk.Text(main_frame, width=50, height=20, wrap=tk.WORD)
+        self.text_display.grid(row=0, column=2, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
+        
+        # Add scrollbar to text display
+        text_scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.text_display.yview)
+        text_scrollbar.grid(row=0, column=3, sticky=(tk.N, tk.S))
+        self.text_display.configure(yscrollcommand=text_scrollbar.set)
+        
+        # Create buttons
+        ttk.Button(main_frame, text="表示", command=self.display_selected).grid(row=1, column=2, pady=5)
+        
+        # Configure grid weights
+        main_frame.columnconfigure(2, weight=1)
+        main_frame.rowconfigure(0, weight=1)
+        
+        # Load JSON files
+        self.load_json_files()
+        
+    def load_json_files(self):
+        """Load JSON files from the current directory."""
+        script_dir = Path(__file__).parent
+        json_files = list(script_dir.glob('*.json'))
+        
+        for file in json_files:
+            self.file_listbox.insert(tk.END, file.name)
+            
+    def display_selected(self):
+        """Display the selected JSON file."""
+        try:
+            selection = self.file_listbox.curselection()
+            if not selection:
+                messagebox.showwarning("警告", "ファイルを選択してください。")
+                return
+                
+            file_name = self.file_listbox.get(selection[0])
+            file_path = Path(__file__).parent / file_name
+            
+            with open(file_path, 'r', encoding='utf-8') as file:
+                data = json.load(file)
+                
+            self.text_display.delete(1.0, tk.END)
+            self.text_display.insert(tk.END, json.dumps(data, ensure_ascii=False, indent=2))
+            
+        except Exception as e:
+            messagebox.showerror("エラー", f"ファイルの表示中にエラーが発生しました：{str(e)}")
+
 def display_json_data_gui():
     global root, notebook, folder_files
     root = tk.Tk()
@@ -325,9 +513,40 @@ def display_json_data_gui():
     default_font = ('Helvetica', 12)
     root.option_add('*Font', default_font)
     
+    # タブのスタイルを設定
+    style = ttk.Style()
+    # ノートブック全体のスタイル
+    style.configure('TNotebook', background='#d0d0d0', borderwidth=2)
+    # タブのスタイル
+    style.configure('TNotebook.Tab', 
+                   background='#c0c0c0',
+                   padding=[15, 5],
+                   borderwidth=1,
+                   relief='solid')
+    # 選択時のタブのスタイル
+    style.map('TNotebook.Tab',
+              background=[('selected', '#ffffff')],
+              foreground=[('selected', '#000000')],
+              relief=[('selected', 'solid')])
+    
+    # APIキーがない場合の警告メッセージ
+    if not GEMINI_API_KEY:
+        warning_frame = ttk.Frame(root)
+        warning_frame.pack(fill='x', padx=5, pady=5)
+        warning_label = ttk.Label(warning_frame, text="⚠️ GeminiApiKey環境変数が設定されていません。PDFからのJSON自動生成機能は無効です。", foreground="red")
+        warning_label.pack(side='left')
+    
     # メインフレーム
     main_frame = ttk.Frame(root)
     main_frame.pack(fill='both', expand=True)
+    
+    # 更新ボタンのフレーム
+    refresh_frame = ttk.Frame(main_frame)
+    refresh_frame.pack(fill='x', padx=5, pady=5)
+    
+    # 更新ボタン
+    refresh_button = ttk.Button(refresh_frame, text="🔄 更新", command=lambda: refresh_display())
+    refresh_button.pack(side='right')
     
     # フォルダごとにJSONファイルをグループ化
     directory = SCRIPT_DIR  # スクリプトのディレクトリを使用
@@ -355,7 +574,7 @@ def display_json_data_gui():
     
     # ノートブック（タブ）の作成
     notebook = ttk.Notebook(main_frame)
-    notebook.pack(fill='both', expand=True)
+    notebook.pack(fill='both', expand=True, padx=5, pady=5)
     
     # 各フォルダごとにタブを作成
     for folder_name, files in folder_files.items():
@@ -365,6 +584,47 @@ def display_json_data_gui():
         
         # タブの内容を作成
         create_tab_content(tab_frame, files)
+    
+    def refresh_display():
+        """ディレクトリ構造やファイルの変化を検知して表示を更新する"""
+        # PDFファイルに対応するJSONファイルがない場合、Gemini APIを使用してJSONを生成
+        check_and_generate_json_for_pdfs()
+        
+        # JSONファイルを再取得
+        json_files = list_json_files(directory)
+        folder_files = defaultdict(list)
+        for json_file in json_files:
+            folder_name = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
+            folder_files[folder_name].append(json_file)
+        
+        # 現在のタブの状態を保存
+        current_tab = notebook.select()
+        current_folder = notebook.tab(current_tab)['text'] if current_tab else None
+        
+        # 既存のタブをすべて削除
+        for tab in notebook.tabs():
+            notebook.forget(tab)
+        
+        # 各フォルダごとにタブを作成
+        for folder_name, files in folder_files.items():
+            # タブのフレーム
+            tab_frame = ttk.Frame(notebook)
+            notebook.add(tab_frame, text=folder_name)
+            
+            # タブの内容を作成
+            create_tab_content(tab_frame, files)
+        
+        # 以前選択していたタブを復元（存在する場合）
+        if current_folder:
+            for tab in notebook.tabs():
+                if notebook.tab(tab)['text'] == current_folder:
+                    notebook.select(tab)
+                    break
+        
+        # 更新完了メッセージを表示
+        message_label = ttk.Label(main_frame, text="表示を更新しました", foreground="green")
+        message_label.place(relx=0.5, rely=0.95, anchor="center")
+        root.after(1000, message_label.destroy)
     
     root.mainloop()
 

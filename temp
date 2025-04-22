@@ -1,0 +1,62 @@
+#{{{ @app.post("/api/pdf2json/")
+@app.post("/api/pdf2json/")
+async def extract_json_from_pdf(pdf: UploadFile = File(...)):
+	"""
+	PDF をアップロードして JSON データを抽出するエンドポイント
+	"""
+	try:
+		GEMINI_API_KEY = os.getenv("GEMINI")
+		if not GEMINI_API_KEY:
+			raise HTTPException(status_code=500, detail="Missing GEMINI API key.")
+
+		# PDFデータを Base64 に変換
+		pdf_data = await pdf.read()
+		pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
+
+		# Gemini API にリクエスト
+		payload = {
+			"contents": [
+				{
+					"parts": [
+						{
+							"text": "領収書または納品書の情報を解析し、購入項目ごとに以下の形式でJSONに構造化してください。ただし、以下の処理を施してください。\n"
+									"+ 金額の部分はカンマがあれば除いてください\n"
+									"+ 金額が0の項目は無視してください\n\n"
+									"{ \"title\": \"領収書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }"
+						},
+						{
+							"inlineData": {
+								"mimeType": "application/pdf",
+								"data": pdf_base64
+							}
+						}
+					]
+				}
+			]
+		}
+
+		async with httpx.AsyncClient() as client:
+			response = await client.post(
+				f"https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent?key={GEMINI_API_KEY}",
+				headers={"Content-Type": "application/json"},
+				json=payload
+			)
+
+		json_response = response.json()
+
+		if response.status_code != 200:
+			raise HTTPException(status_code=500, detail=f"$274E Gemini API error: {json_response}")
+
+		# JSON部分の抽出
+		extracted_text = json_response.get("candidates", [{}])[0].get("content", {}).get("parts", [{}])[0].get("text", "{}")
+		extracted_json_match = re.search(r"```json\n([\s\S]+?)\n```", extracted_text)
+
+		extracted_json = json.loads(extracted_json_match.group(1)) if extracted_json_match else {}
+
+		return extracted_json
+
+	except HTTPException as http_err:
+		raise HTTPException(status_code=500, detail=f"$274E {str(http_err)}")
+	except Exception as e:
+		raise HTTPException(status_code=500, detail=f"$274E {e}")
+#}}}
