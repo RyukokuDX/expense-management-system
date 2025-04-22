@@ -1,7 +1,7 @@
 import os
 import json
 import tkinter as tk
-from tkinter import ttk
+from tkinter import ttk, messagebox
 from datetime import datetime
 from collections import defaultdict
 import webbrowser
@@ -77,6 +77,53 @@ def open_pdf(pdf_path):
     else:
         print(f"PDF file not found: {pdf_path}")
 
+def edit_json_file(json_path):
+    """
+    JSONファイルを編集するための関数
+    """
+    try:
+        # JSONファイルを読み込む
+        with open(json_path, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        # 編集用のウィンドウを作成
+        edit_window = tk.Toplevel()
+        edit_window.title(f"JSON Editor - {os.path.basename(json_path)}")
+        edit_window.geometry("800x600")
+        
+        # テキストエリアを作成
+        text_area = tk.Text(edit_window, wrap=tk.WORD)
+        text_area.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # 現在のJSONデータを整形して表示
+        text_area.insert('1.0', json.dumps(data, ensure_ascii=False, indent=2))
+        
+        def save_changes():
+            try:
+                # テキストエリアの内容を取得
+                new_content = text_area.get('1.0', tk.END)
+                # JSONとして解析
+                new_data = json.loads(new_content)
+                # ファイルに保存
+                with open(json_path, 'w', encoding='utf-8') as f:
+                    json.dump(new_data, f, ensure_ascii=False, indent=2)
+                messagebox.showinfo("成功", "JSONファイルを保存しました")
+                edit_window.destroy()
+                # メインウィンドウを更新
+                root.destroy()
+                display_json_data_gui()
+            except json.JSONDecodeError:
+                messagebox.showerror("エラー", "無効なJSON形式です")
+            except Exception as e:
+                messagebox.showerror("エラー", f"保存中にエラーが発生しました: {str(e)}")
+        
+        # 保存ボタン
+        save_button = ttk.Button(edit_window, text="保存", command=save_changes)
+        save_button.pack(pady=10)
+        
+    except Exception as e:
+        messagebox.showerror("エラー", f"JSONファイルを開けませんでした: {str(e)}")
+
 def display_json_data_gui():
     global root
     root = tk.Tk()
@@ -138,7 +185,7 @@ def display_json_data_gui():
         canvas.configure(yscrollcommand=scrollbar.set)
         
         # ヘッダー行を作成
-        headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他']
+        headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他', '編集']
         for i, header in enumerate(headers):
             label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
             label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
@@ -229,7 +276,8 @@ def display_json_data_gui():
                 receipt_text,
                 '',
                 price_display,
-                ''
+                '',
+                f"📝 {os.path.basename(json_file)}"  # 編集ボタンを追加
             ]
             
             # 各列にデータを表示
@@ -278,6 +326,17 @@ def display_json_data_gui():
                     open_button = ttk.Button(cell_frame, text="📄", width=2)
                     open_button.pack(side="right", padx=2, pady=2)
                     open_button.configure(command=make_open_pdf_command())
+
+                # 編集ボタンの場合は、JSONファイルを開くボタンを追加
+                if i == 12:  # 編集列の場合
+                    def make_edit_command(json_path=json_file):
+                        def edit_command():
+                            edit_json_file(json_path)
+                        return edit_command
+                    
+                    edit_button = ttk.Button(cell_frame, text="📝", width=2)
+                    edit_button.pack(side="right", padx=2, pady=2)
+                    edit_button.configure(command=make_edit_command())
             
             row += 1
         
