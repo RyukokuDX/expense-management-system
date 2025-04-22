@@ -138,7 +138,7 @@ def display_json_data_gui():
         canvas.configure(yscrollcommand=scrollbar.set)
         
         # ヘッダー行を作成
-        headers = ['月', '日', '経費種目', '品目', '発行元', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他']
+        headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他']
         for i, header in enumerate(headers):
             label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
             label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
@@ -221,6 +221,7 @@ def display_json_data_gui():
                 month,
                 day,
                 '物品費',
+                json_data.get('issuer', ''),
                 item.get('product_name', ''),
                 item.get('provider', ''),
                 item.get('model', ''),
@@ -249,7 +250,7 @@ def display_json_data_gui():
                 def make_copy_command(val=value):
                     def copy_command():
                         # 金額の場合は「円」を除く
-                        if i == 9:  # 金額の列インデックス
+                        if i == 11:  # 金額の列インデックス
                             copy_value = str(val).replace('円', '').strip()
                         else:
                             copy_value = str(val)
@@ -268,7 +269,7 @@ def display_json_data_gui():
                 copy_button.configure(command=make_copy_command())
                 
                 # 領収書等の場合は、PDFファイルを開くボタンを追加
-                if i == 7 and value and not value.startswith('PDFファイルが見つかりません'):
+                if i == 8 and value and not value.startswith('PDFファイルが見つかりません'):
                     def make_open_pdf_command(pdf_path=pdf_file_path):
                         def open_pdf_command():
                             open_pdf(pdf_path)
