@@ -101,25 +101,9 @@ def display_json_data_gui():
     
     if not json_files:
         print("No JSON files found. Please check the directory.")
-        # テーブルにメッセージを表示
-        tree = ttk.Treeview(main_frame)
-        tree['columns'] = ('月', '日', '経費種目', '品目', '発行元', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他')
-        tree['show'] = 'headings'
-        
-        # カラムの設定
-        for column in tree['columns']:
-            tree.heading(column, text=column)
-            tree.column(column, width=150)  # 幅を広げる
-        
-        # スクロールバーの追加
-        scrollbar = ttk.Scrollbar(main_frame, orient='vertical', command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        
-        # テーブルとスクロールバーの配置
-        tree.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
-        
-        tree.insert('', 'end', values=('', '', '', 'JSON ファイルが見つかりません', '', '', '', '', '', '', ''))
+        # メッセージを表示
+        message_label = ttk.Label(main_frame, text="JSON ファイルが見つかりません", font=('Helvetica', 14))
+        message_label.pack(pady=20)
         root.mainloop()
         return
     
@@ -140,132 +124,165 @@ def display_json_data_gui():
         tab_frame = ttk.Frame(notebook)
         notebook.add(tab_frame, text=folder_name)
         
-        # テーブルの作成
-        tree = ttk.Treeview(tab_frame)
-        tree['columns'] = ('月', '日', '経費種目', '品目', '発行元', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他')
-        tree['show'] = 'headings'
+        # スクロール可能なフレームを作成
+        canvas = tk.Canvas(tab_frame)
+        scrollbar = ttk.Scrollbar(tab_frame, orient="vertical", command=canvas.yview)
+        scrollable_frame = ttk.Frame(canvas)
         
-        # カラムの設定
-        for column in tree['columns']:
-            tree.heading(column, text=column)
-            tree.column(column, width=150)  # 幅を広げる
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         
-        # 罫線を表示するためのスタイル設定
-        style = ttk.Style()
-        style.configure("Treeview", rowheight=25)  # 行の高さを設定
-        style.configure("Treeview", background="#ffffff", foreground="black", fieldbackground="#ffffff")
-        style.configure("Treeview.Heading", font=('Helvetica', 12, 'bold'))
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(yscrollcommand=scrollbar.set)
         
-        # 罫線を表示するための設定
-        style.configure("Treeview", borderwidth=1, relief="solid")
-        style.configure("Treeview.Cell", borderwidth=1, relief="solid")
+        # ヘッダー行を作成
+        headers = ['月', '日', '経費種目', '品目', '発行元', '品番', '個数', '領収書等', '事務処理関連書類', '金額', 'その他']
+        for i, header in enumerate(headers):
+            label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
+            label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
         
-        # スクロールバーの追加
-        scrollbar = ttk.Scrollbar(tab_frame, orient='vertical', command=tree.yview)
-        tree.configure(yscrollcommand=scrollbar.set)
-        
-        # テーブルとスクロールバーの配置
-        tree.pack(side='left', fill='both', expand=True)
-        scrollbar.pack(side='right', fill='y')
-        
-        # セルクリック時のコピー機能を設定
-        def on_cell_click(event):
-            item = tree.identify_row(event.y)
-            if not item:
-                return
-            
-            column = tree.identify_column(event.x)
-            if not column:
-                return
-            
-            # カラム名を取得
-            col_name = tree['columns'][int(column[1]) - 1]
-            
-            # アイテムの値を取得
-            values = tree.item(item, 'values')
-            if not values:
-                return
-            
-            # カラムのインデックスを取得
-            col_idx = int(column[1]) - 1
-            if col_idx >= len(values):
-                return
-            
-            # 値を取得
-            value = values[col_idx]
-            if not value:
-                return
-            
-            # 領収書等のカラムの場合は、PDFファイルを開く
-            if col_name == '領収書等' and value and not value.startswith('PDFファイルが見つかりません'):
-                # JSONファイルのパスからPDFファイルのパスを生成
-                json_file_path = tree.item(item, 'tags')[0]  # JSONファイルのパスをタグから取得
-                pdf_file_path = get_pdf_path_from_json(json_file_path)
-                open_pdf(pdf_file_path)
-                return
-            
-            # クリップボードにコピー
-            copy_to_clipboard(value)
-            
-            # コピーしたことを示すラベルを表示
-            copy_label = ttk.Label(tab_frame, text=f"{col_name}: {value} をコピーしました", foreground="green")
-            copy_label.place(relx=0.5, rely=0.95, anchor="center")
-            
-            # 1秒後にラベルを消す
-            root.after(1000, copy_label.destroy)
-        
-        # クリックイベントをバインド
-        tree.bind('<ButtonRelease-1>', on_cell_click)
+        # グリッドの列の重みを設定
+        for i in range(len(headers)):
+            scrollable_frame.grid_columnconfigure(i, weight=1)
         
         # JSONファイルの処理
+        row = 1
+        
+        # 日付でソートするためのデータを収集
+        items_data = []
         for json_file in files:
             try:
                 json_data = read_json_file(json_file)
                 print(f"Processing {json_file}: {json_data}")
+                
+                # 日付を取得
+                date_str = json_data.get('payment_date', '')
+                try:
+                    # 日付を解析
+                    for fmt in ['%Y/%m/%d', '%Y-%m-%d']:
+                        try:
+                            date_obj = datetime.strptime(date_str, fmt)
+                            break
+                        except ValueError:
+                            continue
+                except Exception:
+                    # 日付が解析できない場合は現在の日付を使用
+                    date_obj = datetime.now()
+                
                 for item in json_data['items']:
-                    date = json_data.get('payment_date', '')
-                    month, day = parse_date(date)
-                    
-                    # 金額の処理 - 文字列の場合はそのまま使用、数値の場合はフォーマット
-                    total_price = item.get('total_price', '0')
-                    if isinstance(total_price, str):
-                        # 文字列の場合はそのまま使用
-                        price_display = f"{total_price}円"
-                    else:
-                        # 数値の場合はフォーマット
-                        price_display = f"{int(total_price):,}円"
-                    
-                    # JSONファイルのパスからPDFファイルのパスを生成
-                    pdf_file_path = get_pdf_path_from_json(json_file)
-                    pdf_file_name = os.path.basename(pdf_file_path)
-                    
-                    # PDFファイルが存在するか確認
-                    if os.path.exists(pdf_file_path):
-                        receipt_text = f"領収書: {pdf_file_name}"
-                    else:
-                        receipt_text = "PDFファイルが見つかりません"
-                    
-                    # 個数を取得
-                    quantity = item.get('number', '')
-                    
-                    values = (
-                        month,
-                        day,
-                        '物品費',
-                        item.get('product_name', ''),
-                        item.get('provider', ''),
-                        item.get('model', ''),
-                        quantity,
-                        receipt_text,
-                        '',
-                        price_display,
-                        ''
-                    )
-                    
-                    # アイテムを挿入し、JSONファイルのパスをタグとして保存
-                    item_id = tree.insert('', 'end', values=values, tags=(json_file,))
+                    # データを収集
+                    items_data.append({
+                        'date': date_obj,
+                        'json_file': json_file,
+                        'item': item
+                    })
             except Exception as e:
                 print(f"Error processing {json_file}: {e}")
+        
+        # 日付の降順（新しい順）にソート
+        items_data.sort(key=lambda x: x['date'], reverse=True)
+        
+        # ソートされたデータを表示
+        for data in items_data:
+            json_file = data['json_file']
+            item = data['item']
+            date_obj = data['date']
+            
+            # 月と日を取得
+            month = date_obj.month
+            day = date_obj.day
+            
+            # 金額の処理 - 文字列の場合はそのまま使用、数値の場合はフォーマット
+            total_price = item.get('total_price', '0')
+            if isinstance(total_price, str):
+                # 文字列の場合はそのまま使用
+                price_display = f"{total_price}円"
+            else:
+                # 数値の場合はフォーマット
+                price_display = f"{int(total_price):,}円"
+            
+            # JSONファイルのパスからPDFファイルのパスを生成
+            pdf_file_path = get_pdf_path_from_json(json_file)
+            pdf_file_name = os.path.basename(pdf_file_path)
+            
+            # PDFファイルが存在するか確認
+            if os.path.exists(pdf_file_path):
+                receipt_text = f"領収書: {pdf_file_name}"
+            else:
+                receipt_text = "PDFファイルが見つかりません"
+            
+            # 個数を取得
+            quantity = item.get('number', '')
+            
+            # データを表示
+            values = [
+                month,
+                day,
+                '物品費',
+                item.get('product_name', ''),
+                item.get('provider', ''),
+                item.get('model', ''),
+                quantity,
+                receipt_text,
+                '',
+                price_display,
+                ''
+            ]
+            
+            # 各列にデータを表示
+            for i, value in enumerate(values):
+                # セルフレームを作成
+                cell_frame = ttk.Frame(scrollable_frame, relief="solid", borderwidth=1)
+                cell_frame.grid(row=row, column=i, sticky="nsew", padx=1, pady=1)
+                
+                # 値のラベル
+                value_label = ttk.Label(cell_frame, text=str(value), wraplength=150)
+                value_label.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+                
+                # コピーボタン
+                copy_button = ttk.Button(cell_frame, text="📋", width=2)
+                copy_button.pack(side="right", padx=2, pady=2)
+                
+                # コピーボタンのクリックイベント
+                def make_copy_command(val=value):
+                    def copy_command():
+                        # 金額の場合は「円」を除く
+                        if i == 9:  # 金額の列インデックス
+                            copy_value = str(val).replace('円', '').strip()
+                        else:
+                            copy_value = str(val)
+                        
+                        copy_to_clipboard(copy_value)
+                        
+                        # コピーしたことを示すラベルを表示
+                        copy_label = ttk.Label(tab_frame, text=f"{headers[i]}: {copy_value} をコピーしました", foreground="green")
+                        copy_label.place(relx=0.5, rely=0.95, anchor="center")
+                        
+                        # 1秒後にラベルを消す
+                        root.after(1000, copy_label.destroy)
+                    
+                    return copy_command
+                
+                copy_button.configure(command=make_copy_command())
+                
+                # 領収書等の場合は、PDFファイルを開くボタンを追加
+                if i == 7 and value and not value.startswith('PDFファイルが見つかりません'):
+                    def make_open_pdf_command(pdf_path=pdf_file_path):
+                        def open_pdf_command():
+                            open_pdf(pdf_path)
+                        return open_pdf_command
+                    
+                    open_button = ttk.Button(cell_frame, text="📄", width=2)
+                    open_button.pack(side="right", padx=2, pady=2)
+                    open_button.configure(command=make_open_pdf_command())
+            
+            row += 1
+        
+        # スクロールバーとキャンバスを配置
+        canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
     
     root.mainloop()
 
