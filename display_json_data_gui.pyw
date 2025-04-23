@@ -464,71 +464,49 @@ def create_tab_content(tab_frame, files):
     canvas.pack(side="left", fill="both", expand=True)
     scrollbar.pack(side="right", fill="y")
 
-class JsonViewerApp:
-    def __init__(self, root):
-        self.root = root
-        self.root.title("JSON Viewer with Gemini Analysis")
-        self.root.geometry("800x600")
+def refresh_display():
+    """ディレクトリ構造やファイルの変化を検知して表示を更新する"""
+    global notebook, folder_files
+    directory = SCRIPT_DIR
+    
+    # PDFファイルに対応するJSONファイルがない場合、Gemini APIを使用してJSONを生成
+    check_and_generate_json_for_pdfs()
+    
+    # JSONファイルを再取得
+    json_files = list_json_files(directory)
+    folder_files = defaultdict(list)
+    for json_file in json_files:
+        folder_name = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
+        folder_files[folder_name].append(json_file)
+    
+    # 現在のタブの状態を保存
+    current_tab = notebook.select()
+    current_folder = notebook.tab(current_tab)['text'] if current_tab else None
+    
+    # 既存のタブをすべて削除
+    for tab in notebook.tabs():
+        notebook.forget(tab)
+    
+    # 各フォルダごとにタブを作成
+    for folder_name, files in folder_files.items():
+        # タブのフレーム
+        tab_frame = ttk.Frame(notebook)
+        notebook.add(tab_frame, text=folder_name)
         
-        # Create main frame
-        main_frame = ttk.Frame(root, padding="10")
-        main_frame.grid(row=0, column=0, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Create file list
-        self.file_listbox = tk.Listbox(main_frame, width=40, height=10)
-        self.file_listbox.grid(row=0, column=0, rowspan=2, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Add scrollbar to file list
-        scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.file_listbox.yview)
-        scrollbar.grid(row=0, column=1, rowspan=2, sticky=(tk.N, tk.S))
-        self.file_listbox.configure(yscrollcommand=scrollbar.set)
-        
-        # Create text display area
-        self.text_display = tk.Text(main_frame, width=50, height=20, wrap=tk.WORD)
-        self.text_display.grid(row=0, column=2, padx=5, pady=5, sticky=(tk.W, tk.E, tk.N, tk.S))
-        
-        # Add scrollbar to text display
-        text_scrollbar = ttk.Scrollbar(main_frame, orient=tk.VERTICAL, command=self.text_display.yview)
-        text_scrollbar.grid(row=0, column=3, sticky=(tk.N, tk.S))
-        self.text_display.configure(yscrollcommand=text_scrollbar.set)
-        
-        # Create buttons
-        ttk.Button(main_frame, text="表示", command=self.display_selected).grid(row=1, column=2, pady=5)
-        
-        # Configure grid weights
-        main_frame.columnconfigure(2, weight=1)
-        main_frame.rowconfigure(0, weight=1)
-        
-        # Load JSON files
-        self.load_json_files()
-        
-    def load_json_files(self):
-        """Load JSON files from the current directory."""
-        script_dir = Path(__file__).parent
-        json_files = list(script_dir.glob('*.json'))
-        
-        for file in json_files:
-            self.file_listbox.insert(tk.END, file.name)
-            
-    def display_selected(self):
-        """Display the selected JSON file."""
-        try:
-            selection = self.file_listbox.curselection()
-            if not selection:
-                messagebox.showwarning("警告", "ファイルを選択してください。")
-                return
-                
-            file_name = self.file_listbox.get(selection[0])
-            file_path = Path(__file__).parent / file_name
-            
-            with open(file_path, 'r', encoding='utf-8') as file:
-                data = json.load(file)
-                
-            self.text_display.delete(1.0, tk.END)
-            self.text_display.insert(tk.END, json.dumps(data, ensure_ascii=False, indent=2))
-            
-        except Exception as e:
-            messagebox.showerror("エラー", f"ファイルの表示中にエラーが発生しました：{str(e)}")
+        # タブの内容を作成
+        create_tab_content(tab_frame, files)
+    
+    # 以前選択していたタブを復元（存在する場合）
+    if current_folder:
+        for tab in notebook.tabs():
+            if notebook.tab(tab)['text'] == current_folder:
+                notebook.select(tab)
+                break
+    
+    # 更新完了メッセージを表示
+    message_label = ttk.Label(root, text="表示を更新しました", foreground="green")
+    message_label.place(relx=0.5, rely=0.95, anchor="center")
+    root.after(1000, message_label.destroy)
 
 def display_json_data_gui():
     global root, notebook, folder_files
@@ -571,7 +549,7 @@ def display_json_data_gui():
     refresh_frame.pack(fill='x', padx=5, pady=5)
     
     # 更新ボタン
-    refresh_button = ttk.Button(refresh_frame, text="🔄 更新", command=lambda: refresh_display())
+    refresh_button = ttk.Button(refresh_frame, text="🔄 更新", command=refresh_display)
     refresh_button.pack(side='right')
     
     # フォルダごとにJSONファイルをグループ化
@@ -610,47 +588,6 @@ def display_json_data_gui():
         
         # タブの内容を作成
         create_tab_content(tab_frame, files)
-    
-    def refresh_display():
-        """ディレクトリ構造やファイルの変化を検知して表示を更新する"""
-        # PDFファイルに対応するJSONファイルがない場合、Gemini APIを使用してJSONを生成
-        check_and_generate_json_for_pdfs()
-        
-        # JSONファイルを再取得
-        json_files = list_json_files(directory)
-        folder_files = defaultdict(list)
-        for json_file in json_files:
-            folder_name = os.path.basename(os.path.dirname(os.path.dirname(json_file)))
-            folder_files[folder_name].append(json_file)
-        
-        # 現在のタブの状態を保存
-        current_tab = notebook.select()
-        current_folder = notebook.tab(current_tab)['text'] if current_tab else None
-        
-        # 既存のタブをすべて削除
-        for tab in notebook.tabs():
-            notebook.forget(tab)
-        
-        # 各フォルダごとにタブを作成
-        for folder_name, files in folder_files.items():
-            # タブのフレーム
-            tab_frame = ttk.Frame(notebook)
-            notebook.add(tab_frame, text=folder_name)
-            
-            # タブの内容を作成
-            create_tab_content(tab_frame, files)
-        
-        # 以前選択していたタブを復元（存在する場合）
-        if current_folder:
-            for tab in notebook.tabs():
-                if notebook.tab(tab)['text'] == current_folder:
-                    notebook.select(tab)
-                    break
-        
-        # 更新完了メッセージを表示
-        message_label = ttk.Label(main_frame, text="表示を更新しました", foreground="green")
-        message_label.place(relx=0.5, rely=0.95, anchor="center")
-        root.after(1000, message_label.destroy)
     
     root.mainloop()
 
