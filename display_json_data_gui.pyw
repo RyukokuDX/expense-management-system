@@ -278,7 +278,7 @@ def create_tab_content(tab_frame, files):
     canvas.configure(yscrollcommand=scrollbar.set)
     
     # ヘッダー行を作成
-    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '関連処理', '金額', '編集']
+    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '関連処理', '金額', 'JSON', '削除']
     for i, header in enumerate(headers):
         label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
         label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
@@ -371,7 +371,8 @@ def create_tab_content(tab_frame, files):
             receipt_text,
             '',
             price_display,
-            f"📝 {os.path.basename(json_file)}"  # 編集ボタンを追加
+            f"📝 {os.path.basename(json_file)}",  # JSONボタン
+            ""  # 削除ボタン（空の文字列に変更）
         ]
         
         # 各列にデータを表示
@@ -380,57 +381,82 @@ def create_tab_content(tab_frame, files):
             cell_frame = ttk.Frame(scrollable_frame, relief="solid", borderwidth=1)
             cell_frame.grid(row=row, column=i, sticky="nsew", padx=1, pady=1)
             
-            # 値のラベル
-            value_label = ttk.Label(cell_frame, text=str(value), wraplength=150)
-            value_label.pack(side="left", fill="both", expand=True, padx=5, pady=5)
-            
-            # コピーボタン
-            copy_button = ttk.Button(cell_frame, text="📋", width=2)
-            copy_button.pack(side="right", padx=2, pady=2)
-            
-            # コピーボタンのクリックイベント
-            def make_copy_command(val=value):
-                def copy_command():
-                    # 金額の場合は「円」を除く
-                    if i == 10:  # 金額の列インデックス
-                        copy_value = str(val).replace('円', '').strip()
-                    else:
-                        copy_value = str(val)
-                    
-                    copy_to_clipboard(copy_value)
-                    
-                    # コピーしたことを示すラベルを表示
-                    copy_label = ttk.Label(tab_frame, text=f"{headers[i]}: {copy_value} をコピーしました", foreground="green")
-                    copy_label.place(relx=0.5, rely=0.95, anchor="center")
-                    
-                    # 1秒後にラベルを消す
-                    root.after(1000, copy_label.destroy)
+            # 削除列の場合は特別処理
+            if i == 12:  # 削除列の場合
+                def make_delete_command(json_path=json_file):
+                    def delete_command():
+                        # 削除確認ダイアログを表示
+                        if messagebox.askyesno("確認", "このレコードを削除してもよろしいですか？\nこの操作は取り消せません。"):
+                            try:
+                                # JSONファイルを削除
+                                os.remove(json_path)
+                                # 対応するPDFファイルも削除（オプション）
+                                pdf_path = get_pdf_path_from_json(json_path)
+                                if os.path.exists(pdf_path):
+                                    if messagebox.askyesno("確認", "対応するPDFファイルも削除しますか？"):
+                                        os.remove(pdf_path)
+                                # 表示を更新
+                                refresh_display()
+                                messagebox.showinfo("成功", "レコードを削除しました")
+                            except Exception as e:
+                                messagebox.showerror("エラー", f"削除中にエラーが発生しました: {str(e)}")
+                    return delete_command
                 
-                return copy_command
-            
-            copy_button.configure(command=make_copy_command())
-            
-            # 領収書等の場合は、PDFファイルを開くボタンを追加
-            if i == 8 and value and not value.startswith('PDFファイルが見つかりません'):
-                def make_open_pdf_command(pdf_path=pdf_file_path):
-                    def open_pdf_command():
-                        open_pdf(pdf_path)
-                    return open_pdf_command
+                delete_button = ttk.Button(cell_frame, text="🗑️", width=2)
+                delete_button.pack(expand=True)
+                delete_button.configure(command=make_delete_command())
+            else:
+                # 値のラベル
+                value_label = ttk.Label(cell_frame, text=str(value), wraplength=150)
+                value_label.pack(side="left", fill="both", expand=True, padx=5, pady=5)
                 
-                open_button = ttk.Button(cell_frame, text="📄", width=2)
-                open_button.pack(side="right", padx=2, pady=2)
-                open_button.configure(command=make_open_pdf_command())
-            
-            # 編集ボタンの場合は、JSONファイルを開くボタンを追加
-            if i == 11:  # 編集列の場合
-                def make_edit_command(json_path=json_file):
-                    def edit_command():
-                        edit_json_file(json_path)
-                    return edit_command
+                # コピーボタン
+                copy_button = ttk.Button(cell_frame, text="📋", width=2)
+                copy_button.pack(side="right", padx=2, pady=2)
                 
-                edit_button = ttk.Button(cell_frame, text="📝", width=2)
-                edit_button.pack(side="right", padx=2, pady=2)
-                edit_button.configure(command=make_edit_command())
+                # コピーボタンのクリックイベント
+                def make_copy_command(val=value):
+                    def copy_command():
+                        # 金額の場合は「円」を除く
+                        if i == 10:  # 金額の列インデックス
+                            copy_value = str(val).replace('円', '').strip()
+                        else:
+                            copy_value = str(val)
+                        
+                        copy_to_clipboard(copy_value)
+                        
+                        # コピーしたことを示すラベルを表示
+                        copy_label = ttk.Label(tab_frame, text=f"{headers[i]}: {copy_value} をコピーしました", foreground="green")
+                        copy_label.place(relx=0.5, rely=0.95, anchor="center")
+                        
+                        # 1秒後にラベルを消す
+                        root.after(1000, copy_label.destroy)
+                    
+                    return copy_command
+                
+                copy_button.configure(command=make_copy_command())
+                
+                # 領収書等の場合は、PDFファイルを開くボタンを追加
+                if i == 8 and value and not value.startswith('PDFファイルが見つかりません'):
+                    def make_open_pdf_command(pdf_path=pdf_file_path):
+                        def open_pdf_command():
+                            open_pdf(pdf_path)
+                        return open_pdf_command
+                    
+                    open_button = ttk.Button(cell_frame, text="📄", width=2)
+                    open_button.pack(side="right", padx=2, pady=2)
+                    open_button.configure(command=make_open_pdf_command())
+                
+                # JSONボタンの場合は、JSONファイルを開くボタンを追加
+                if i == 11:  # JSON列の場合
+                    def make_edit_command(json_path=json_file):
+                        def edit_command():
+                            edit_json_file(json_path)
+                        return edit_command
+                    
+                    edit_button = ttk.Button(cell_frame, text="📝", width=2)
+                    edit_button.pack(side="right", padx=2, pady=2)
+                    edit_button.configure(command=make_edit_command())
         
         row += 1
     
