@@ -5,7 +5,7 @@ python-dotenv==1.0.0
 # PDF処理
 PyPDF2==3.0.1
 pdf2image==1.16.3
-Pillow==10.2.0
+Pillow==10.3.0
 
 # GUI関連
 tkinter  # 通常はPythonに標準搭載
