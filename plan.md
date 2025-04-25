@@ -322,7 +322,7 @@ graph TD
 - カード支払情報など、領収書データ以外のものを参照する場合の処理
 - setting.jsonでのjsonの対象データを指定する必要はるか
 - 領収書内に、複数の商品があった場合の処理をどうするか
-- 複数の領収書に跨いだ際の申請書の保存場所
+   - 削除表示フィールどを追加して、項目単位の削除に対応か
 
 ## 技術スタック
 
@@ -335,8 +335,8 @@ graph TD
 - pdfplumber (PDF解析)
 - google-cloud-aiplatform (Gemini API)
 - openai (GPT API)
-- reportlab (PDF生成)
-- PyPDF2 (PDFフォーム操作)
+- Node.js
+   - 
 
 ### 開発ツール
 - pytest (テスト)
