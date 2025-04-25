@@ -34,14 +34,17 @@ Pythonを基本としますが、外部ツールの呼び出しは制限しま�
    - `profile/` 申請に用いるprofileを格納
       - `profileA.json` profile set A
       - `profileB.json` profile set B
-   - `unprocessed/` 未処理の領収書を格納するディレクトリ
-   - `registered/` 処理済みの領収書毎のディレクトリを格納するディレクトリ
+   - `unprocessed/` フォルダ分けやjson生成前の領収書を格納するディレクトリ
+   - `registered/` json生成後のディレクトリを格納するディレクトリ
       - `receiptA/` receiptA領収書に対応するディレクトリ（自動生成）
          - `receiptA.pdf` 処理元のPDF
          - `receiptA.json` PDFから生成されたJSONファイル（LLMでの生成を試みる）
-         - `receiptA_form.pdf` 処理スクリプトから生成されたと期待されるファイル
-         （生成されない場合もある。PDFとも限らない）
-      - その他ユーザーが追加したファイル
+         - その他ユーザーが追加したファイル
+   - `applications/` 申請書を格納するディレクトリ
+      - `20240315_1430/` 申請書フォルダ（日時）
+         - `application.json` 申請情報
+         - `expense_form.pdf` process出力
+         - `attachments/` 必要に応じて添付資料
    - `logs/` 経費Aのログを格納
       - `process.log` 処理ログ
       - `error.log` エラーログ
@@ -112,47 +115,28 @@ Pythonを基本としますが、外部ツールの呼び出しは制限しま�
 }
 ```
 
-#### llm_config/gemini_invoice.json
+#### applications/20240315_1430/application.json
 ```json
 {
-  "name": "Gemini API設定（請求書用）",
-  "description": "Google Gemini APIの設定（請求書解析用）",
-  "version": "1.0",
-  "api_type": "gemini",
-  "model": "gemini-1.5-pro-vision",
-  "api_key_source": "environment",
-  "api_key_env_var": "GeminiApiKey",
-  "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent",
-  "headers": {
-    "Content-Type": "application/json"
-  },
-  "timeout": 30,
-  "max_retries": 3,
-  "prompt": {
-    "name": "請求書解析プロンプト",
-    "description": "請求書から情報を抽出するためのプロンプト",
-    "version": "1.0",
-    "prompt_template": "請求書の情報を解析し、以下の形式でJSONに構造化してください。\n+ 金額の部分はカンマがあれば除いてください\n+ 金額が0の項目は無視してください\n\n{ \"title\": \"請求書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }",
-    "output_format": {
-      "title": "string",
-      "issuer": "string",
-      "receiver_group": "string",
-      "receiver_name": "string",
-      "total_amount": "string",
-      "payment_date": "string (YYYY/MM/DD)",
-      "items": [
-        {
-          "product_name": "string",
-          "provider": "string",
-          "model": "string",
-          "unite_price": "string",
-          "total_price": "string",
-          "number": "string",
-          "delivery_date": "string (YYYY/MM/DD) or null"
-        }
-      ]
+  "profile": "profile_A",
+  "application_year": 2024,
+  "application_month": 3,
+  "application_date": 15,
+  "application_time": "14:30",
+  "application_items": [
+    {
+      "json_path": "registered/receipt_001/receipt_001.json",
+      "item_num": 0
+    },
+    {
+      "json_path": "registered/receipt_002/receipt_002.json",
+      "item_num": 0
     }
-  }
+  ],
+  "status": "pending",
+  "created_at": "2024-03-15T14:30:00",
+  "updated_at": "2024-03-15T14:30:00",
+  "process_output": "expense_form.pdf"
 }
 ```
 
