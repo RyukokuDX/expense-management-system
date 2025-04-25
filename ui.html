@@ -3,13 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>経費管理アプリケーション UIイメージ</title>
+    <title>経費管理アプリケーション UIイメージ (Tkinter)</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'TkDefaultFont', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             margin: 0;
             padding: 20px;
-            background-color: #f5f5f5;
+            background-color: #f0f0f0;
         }
         
         .container {
@@ -34,61 +34,63 @@
             margin-bottom: 20px;
         }
         
-        /* メインウィンドウ */
+        /* メインウィンドウ - Tkinter風 */
         .main-window {
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 1px solid #a0a0a0;
+            border-radius: 0;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: #f0f0f0;
         }
         
         .window-title {
-            background-color: #4a6ea9;
-            color: white;
-            padding: 10px;
+            background-color: #d4d0c8;
+            color: #000;
+            padding: 5px 10px;
             font-weight: bold;
+            border-bottom: 1px solid #a0a0a0;
         }
         
         .tab-bar {
-            background-color: #f0f0f0;
-            padding: 5px;
-            border-bottom: 1px solid #ddd;
+            background-color: #d4d0c8;
+            padding: 2px;
+            border-bottom: 1px solid #a0a0a0;
         }
         
         .tab {
             display: inline-block;
-            padding: 8px 15px;
-            margin-right: 5px;
-            background-color: #e0e0e0;
-            border-radius: 3px;
+            padding: 5px 10px;
+            margin-right: 2px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
+            border-bottom: none;
             cursor: pointer;
         }
         
         .tab.active {
-            background-color: white;
-            border: 1px solid #ddd;
-            border-bottom: none;
+            background-color: #f0f0f0;
+            border: 1px solid #a0a0a0;
+            border-bottom: 1px solid #f0f0f0;
         }
         
         .toolbar {
-            padding: 10px;
-            background-color: #f8f8f8;
-            border-bottom: 1px solid #ddd;
+            padding: 5px;
+            background-color: #f0f0f0;
+            border-bottom: 1px solid #a0a0a0;
         }
         
         .button {
             display: inline-block;
-            padding: 5px 10px;
-            background-color: #4a6ea9;
-            color: white;
-            border-radius: 3px;
-            margin-right: 10px;
+            padding: 3px 8px;
+            background-color: #d4d0c8;
+            color: #000;
+            border: 1px solid #a0a0a0;
+            margin-right: 5px;
             cursor: pointer;
         }
         
         .button.settings {
-            background-color: #6c757d;
+            background-color: #d4d0c8;
         }
         
         .button i {
@@ -97,14 +99,15 @@
         
         .amount {
             display: inline-block;
-            padding: 5px 10px;
+            padding: 3px 8px;
             background-color: #f0f0f0;
-            border-radius: 3px;
+            border: 1px solid #a0a0a0;
             margin-right: 10px;
         }
         
         .table-container {
             overflow-x: auto;
+            background-color: #ffffff;
         }
         
         table {
@@ -114,60 +117,65 @@
         }
         
         th, td {
-            padding: 8px;
+            padding: 5px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border: 1px solid #a0a0a0;
             overflow: hidden;
         }
         
         th {
-            background-color: #f0f0f0;
+            background-color: #d4d0c8;
             font-weight: bold;
         }
         
+        tr:nth-child(even) {
+            background-color: #f8f8f8;
+        }
+        
         tr:hover {
-            background-color: #f5f5f5;
+            background-color: #e8e8e8;
         }
         
         .checkbox {
             width: 16px;
             height: 16px;
-            border: 1px solid #999;
+            border: 1px solid #a0a0a0;
             display: inline-block;
             text-align: center;
             line-height: 16px;
             cursor: pointer;
+            background-color: #ffffff;
         }
         
         .checkbox.checked {
-            background-color: #4a6ea9;
-            color: white;
+            background-color: #d4d0c8;
+            color: #000;
         }
         
         .action-button {
             display: inline-block;
-            padding: 3px 8px;
-            background-color: #f0f0f0;
-            border-radius: 3px;
+            padding: 2px 5px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
             cursor: pointer;
             font-size: 12px;
         }
         
         .delete-button {
             display: inline-block;
-            padding: 3px 8px;
-            background-color: #f0f0f0;
-            border-radius: 3px;
+            padding: 2px 5px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
             cursor: pointer;
-            font-size: 16px;
+            font-size: 14px;
             color: #d9534f;
         }
         
         .pdf-button {
             display: inline-block;
-            padding: 3px 8px;
-            background-color: #f0f0f0;
-            border-radius: 3px;
+            padding: 2px 5px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
             cursor: pointer;
             font-size: 12px;
             margin-left: 5px;
@@ -175,14 +183,13 @@
         
         .copy-button {
             display: none;
-            padding: 2px 4px;
-            background-color: #e8f5e9;
-            border-radius: 3px;
+            padding: 1px 3px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
             cursor: pointer;
             font-size: 10px;
             margin-left: 5px;
-            color: #2e7d32;
-            border: 1px solid #a5d6a7;
+            color: #000;
         }
         
         .cell-content:hover .copy-button {
@@ -198,72 +205,23 @@
         
         .cell-value {
             flex-grow: 1;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        
-        .action-column {
-            white-space: nowrap;
-            text-align: right;
-        }
-        
-        .status-bar {
-            padding: 10px;
-            background-color: #f8f8f8;
-            border-top: 1px solid #ddd;
-        }
-        
-        .status-item {
-            display: inline-block;
-            margin-right: 15px;
-        }
-        
-        .status-item.error {
-            color: #d9534f;
-        }
-        
-        .status-item.warning {
-            color: #f0ad4e;
-        }
-        
-        /* 申請書作成ダイアログ */
-        .dialog {
-            border: 1px solid #ccc;
-            border-radius: 5px;
-            overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            background-color: white;
-            width: 500px;
-            margin: 0 auto;
-        }
-        
-        .dialog-title {
-            background-color: #4a6ea9;
-            color: white;
-            padding: 10px;
-            font-weight: bold;
-        }
-        
-        .dialog-content {
-            padding: 15px;
         }
         
         .form-group {
-            margin-bottom: 15px;
+            margin-bottom: 10px;
         }
         
         .form-label {
             display: block;
-            margin-bottom: 5px;
+            margin-bottom: 3px;
             font-weight: bold;
         }
         
         .form-control {
             width: 100%;
-            padding: 8px;
-            border: 1px solid #ddd;
-            border-radius: 3px;
+            padding: 3px;
+            border: 1px solid #a0a0a0;
+            background-color: #ffffff;
         }
         
         .select {
@@ -274,23 +232,24 @@
         .select:after {
             content: "▼";
             position: absolute;
-            right: 10px;
+            right: 5px;
             top: 50%;
             transform: translateY(-50%);
             pointer-events: none;
+            font-size: 10px;
         }
         
         .item-list {
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            padding: 10px;
-            max-height: 200px;
+            border: 1px solid #a0a0a0;
+            padding: 5px;
+            max-height: 150px;
             overflow-y: auto;
+            background-color: #ffffff;
         }
         
         .item {
-            padding: 5px 0;
-            border-bottom: 1px solid #eee;
+            padding: 3px 0;
+            border-bottom: 1px solid #e0e0e0;
         }
         
         .item:last-child {
@@ -298,45 +257,44 @@
         }
         
         .dialog-footer {
-            padding: 10px;
-            background-color: #f8f8f8;
-            border-top: 1px solid #ddd;
+            padding: 5px;
+            background-color: #d4d0c8;
+            border-top: 1px solid #a0a0a0;
             text-align: right;
         }
         
-        /* JSON編集ダイアログ */
+        /* JSON編集ダイアログ - Tkinter風 */
         .json-editor {
-            font-family: monospace;
+            font-family: 'TkFixedFont', monospace;
             white-space: pre;
-            background-color: #f8f8f8;
-            border: 1px solid #ddd;
-            border-radius: 3px;
-            padding: 10px;
-            max-height: 300px;
+            background-color: #ffffff;
+            border: 1px solid #a0a0a0;
+            padding: 5px;
+            max-height: 250px;
             overflow-y: auto;
         }
         
-        /* ログ表示ウィンドウ */
+        /* ログ表示ウィンドウ - Tkinter風 */
         .log-window {
-            border: 1px solid #ccc;
-            border-radius: 5px;
+            border: 1px solid #a0a0a0;
             overflow: hidden;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: #f0f0f0;
             width: 600px;
             margin: 0 auto;
         }
         
         .log-content {
-            padding: 15px;
-            max-height: 300px;
+            padding: 10px;
+            max-height: 250px;
             overflow-y: auto;
-            font-family: monospace;
+            font-family: 'TkFixedFont', monospace;
+            background-color: #ffffff;
         }
         
         .log-entry {
-            padding: 3px 0;
-            border-bottom: 1px solid #eee;
+            padding: 2px 0;
+            border-bottom: 1px solid #e0e0e0;
         }
         
         .log-entry:last-child {
@@ -355,15 +313,61 @@
         }
         
         .log-level.info {
-            color: #5bc0de;
+            color: #0066cc;
         }
         
         .log-level.warning {
-            color: #f0ad4e;
+            color: #cc6600;
         }
         
         .log-level.error {
-            color: #d9534f;
+            color: #cc0000;
+        }
+        
+        /* ステータスバー - Tkinter風 */
+        .status-bar {
+            background-color: #d4d0c8;
+            border-top: 1px solid #a0a0a0;
+            padding: 3px 5px;
+            display: flex;
+            justify-content: space-between;
+        }
+        
+        .status-item {
+            padding: 0 5px;
+            font-size: 12px;
+        }
+        
+        .status-item.error {
+            color: #cc0000;
+        }
+        
+        .status-item.warning {
+            color: #cc6600;
+        }
+        
+        /* ダイアログ - Tkinter風 */
+        .dialog {
+            border: 1px solid #a0a0a0;
+            border-radius: 0;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            background-color: #f0f0f0;
+            width: 500px;
+            margin: 0 auto;
+        }
+        
+        .dialog-title {
+            background-color: #d4d0c8;
+            color: #000;
+            padding: 5px 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #a0a0a0;
+        }
+        
+        .dialog-content {
+            padding: 10px;
+            background-color: #f0f0f0;
         }
         
         /* 列幅の設定 */
@@ -386,7 +390,7 @@
 </head>
 <body>
     <div class="container">
-        <h1>経費管理アプリケーション UIイメージ</h1>
+        <h1>経費管理アプリケーション UIイメージ (Tkinter)</h1>
         
         <div class="ui-section">
             <h2>メイン画面</h2>
@@ -653,7 +657,7 @@
                     </div>
                 </div>
                 <div class="dialog-footer">
-                    <div class="button" style="background-color: #f0f0f0; color: #333;">キャンセル</div>
+                    <div class="button" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
                     <div class="button">申請書作成</div>
                 </div>
             </div>
@@ -686,7 +690,7 @@
                 </div>
                 <div class="dialog-footer">
                     <div class="button">保存</div>
-                    <div class="button" style="background-color: #f0f0f0; color: #333;">キャンセル</div>
+                    <div class="button" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
                 </div>
             </div>
         </div>
@@ -697,48 +701,28 @@
                 <div class="dialog-title">ログ表示</div>
                 <div class="log-content">
                     <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:00</span>
-                        <span class="log-level info">[INFO]</span>
+                        <span class="log-time">2024-03-15 10:30:45</span>
+                        <span class="log-level info">INFO</span>
                         <span>アプリケーション起動</span>
                     </div>
                     <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:05</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>設定ファイル読み込み完了</span>
+                        <span class="log-time">2024-03-15 10:31:12</span>
+                        <span class="log-level info">INFO</span>
+                        <span>PDFファイル検出: receipt_001.pdf</span>
                     </div>
                     <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:10</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>経費Aのデータ読み込み完了</span>
+                        <span class="log-time">2024-03-15 10:31:15</span>
+                        <span class="log-level warning">WARN</span>
+                        <span>一部の項目が認識できませんでした</span>
                     </div>
                     <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:15</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>更新ボタンがクリックされました</span>
-                    </div>
-                    <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:20</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>unprocessed内のPDFを処理中...</span>
-                    </div>
-                    <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:25</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>receipt_001.pdfの処理完了</span>
-                    </div>
-                    <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:30</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>receipt_002.pdfの処理完了</span>
-                    </div>
-                    <div class="log-entry">
-                        <span class="log-time">2024-03-15 14:30:35</span>
-                        <span class="log-level info">[INFO]</span>
-                        <span>処理完了</span>
+                        <span class="log-time">2024-03-15 10:31:20</span>
+                        <span class="log-level info">INFO</span>
+                        <span>JSONデータ保存完了: receipt_001.json</span>
                     </div>
                 </div>
                 <div class="dialog-footer">
-                    <div class="button" style="background-color: #f0f0f0; color: #333;">閉じる</div>
+                    <div class="button">閉じる</div>
                 </div>
             </div>
         </div>
