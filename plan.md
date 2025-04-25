@@ -17,29 +17,144 @@ Pythonを基本としますが、外部ツールの呼び出しは制限しま�
 各経費毎に次のような構造を構築します：
 
 - `経費A` 経費Aのディレクトリです。ディレクトリ名がUIのテーブル名になります。
-   - `setting.json` 経費Aの設定を行うjson. 構成は以下
-      - LLM URI
-      - API KEY (直接または環境変数で指定)
-      - LLM prompt
+   - `setting.json` 経費Aの基本設定を行うjson. 構成は以下
       - テーブルのヘッダーと使用するjsonの対応
-   - `process` 各処理に用いるスクリプト用ディレクトリ
+      - デフォルトのLLM設定ファイルのパス
+   - `llm_config/` LLM設定用ディレクトリ
+      - `gemini_receipt.json` Gemini API設定（領収書用）
+      - `gemini_invoice.json` Gemini API設定（請求書用）
+      - `gemini_delivery.json` Gemini API設定（納品書用）
+      - `gpt4_receipt.json` GPT-4 API設定（領収書用）
+      - `gpt4_invoice.json` GPT-4 API設定（請求書用）
+      - `gpt4_delivery.json` GPT-4 API設定（納品書用）
+   - `process/` 各処理に用いるスクリプト用ディレクトリ
       - `processA.py`
       - `processB.py`
       - `processB.js` Pythonで組んでいるため、Node.jsを利用する場合はprocessBから呼び出す
-   - `profile` 申請に用いるprofileを格納
+   - `profile/` 申請に用いるprofileを格納
       - `profileA.json` profile set A
       - `profileB.json` profile set B
-   - `unprocessed` 未処理の領収書を格納するディレクトリ
-   - `registered` 処理済みの領収書毎のディレクトリを格納するディレクトリ
-      - `receiptA` receiptA領収書に対応するディレクトリ（自動生成）
+   - `unprocessed/` 未処理の領収書を格納するディレクトリ
+   - `registered/` 処理済みの領収書毎のディレクトリを格納するディレクトリ
+      - `receiptA/` receiptA領収書に対応するディレクトリ（自動生成）
          - `receiptA.pdf` 処理元のPDF
          - `receiptA.json` PDFから生成されたJSONファイル（LLMでの生成を試みる）
          - `receiptA_form.pdf` 処理スクリプトから生成されたと期待されるファイル
          （生成されない場合もある。PDFとも限らない）
       - その他ユーザーが追加したファイル
-   - `logs` 経費Aのログを格納
+   - `logs/` 経費Aのログを格納
       - `process.log` 処理ログ
       - `error.log` エラーログ
+
+### 設定ファイルの構造
+
+#### setting.json
+```json
+{
+  "table_headers": {
+    "月": "payment_date.month",
+    "日": "payment_date.day",
+    "経費種目": "expense_type",
+    "発行元": "issuer",
+    "品目": "items[*].product_name",
+    "業者": "items[*].provider",
+    "品番": "items[*].model",
+    "個数": "items[*].number",
+    "領収書等": "title",
+    "関連処理": "related_process",
+    "金額": "items[*].total_price"
+  },
+  "default_llm": "llm_config/gemini_receipt.json"
+}
+```
+
+#### llm_config/gemini_receipt.json
+```json
+{
+  "name": "Gemini API設定（領収書用）",
+  "description": "Google Gemini APIの設定（領収書解析用）",
+  "version": "1.0",
+  "api_type": "gemini",
+  "model": "gemini-1.5-pro-vision",
+  "api_key_source": "environment",
+  "api_key_env_var": "GeminiApiKey",
+  "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "timeout": 30,
+  "max_retries": 3,
+  "prompt": {
+    "name": "領収書解析プロンプト",
+    "description": "領収書から情報を抽出するためのプロンプト",
+    "version": "1.0",
+    "prompt_template": "領収書または納品書の情報を解析し、購入項目ごとに以下の形式でJSONに構造化してください。ただし、以下の処理を施してください。\n+ 金額の部分はカンマがあれば除いてください\n+ 金額が0の項目は無視してください\n\n{ \"title\": \"領収書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }",
+    "output_format": {
+      "title": "string",
+      "issuer": "string",
+      "receiver_group": "string",
+      "receiver_name": "string",
+      "total_amount": "string",
+      "payment_date": "string (YYYY/MM/DD)",
+      "items": [
+        {
+          "product_name": "string",
+          "provider": "string",
+          "model": "string",
+          "unite_price": "string",
+          "total_price": "string",
+          "number": "string",
+          "delivery_date": "string (YYYY/MM/DD) or null"
+        }
+      ]
+    }
+  }
+}
+```
+
+#### llm_config/gemini_invoice.json
+```json
+{
+  "name": "Gemini API設定（請求書用）",
+  "description": "Google Gemini APIの設定（請求書解析用）",
+  "version": "1.0",
+  "api_type": "gemini",
+  "model": "gemini-1.5-pro-vision",
+  "api_key_source": "environment",
+  "api_key_env_var": "GeminiApiKey",
+  "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "timeout": 30,
+  "max_retries": 3,
+  "prompt": {
+    "name": "請求書解析プロンプト",
+    "description": "請求書から情報を抽出するためのプロンプト",
+    "version": "1.0",
+    "prompt_template": "請求書の情報を解析し、以下の形式でJSONに構造化してください。\n+ 金額の部分はカンマがあれば除いてください\n+ 金額が0の項目は無視してください\n\n{ \"title\": \"請求書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }",
+    "output_format": {
+      "title": "string",
+      "issuer": "string",
+      "receiver_group": "string",
+      "receiver_name": "string",
+      "total_amount": "string",
+      "payment_date": "string (YYYY/MM/DD)",
+      "items": [
+        {
+          "product_name": "string",
+          "provider": "string",
+          "model": "string",
+          "unite_price": "string",
+          "total_price": "string",
+          "number": "string",
+          "delivery_date": "string (YYYY/MM/DD) or null"
+        }
+      ]
+    }
+  }
+}
+```
 
 ### `display_json_data_gui.pyw` によるUI構成
 
@@ -51,6 +166,9 @@ viewは次のように構成されます：
    - ツールバー
       - 更新ボタン: unprocessed内のPDFを処理するボタン
       - 総額表示: 使用額の総額を表示
+      - 処理ボタン: processのスクリプトを選択して実行するボタン。対象は処理対象☑が入っているもの
+         - 申請書作成
+         - 領収書データ以外の書類を利用したjson編集
    - 表
       - カラム構成
          - setting.json内のレシピに従って表示
@@ -61,9 +179,6 @@ viewは次のように構成されます：
          - リンクボタン（任意）: PDFの表示などに利用
          - 編集ボタン（任意）: JSONファイルが値の場合に、JSONの編集画面を表示
          - 処理対象☑ : システムによる自動生成(setting.jsonでの指定適用外)
-   - 処理ボタン: processのスクリプトを選択して実行するボタン。対象は処理対象☑が入っているもの
-      - 申請書作成
-      - 領収書データ以外の書類を利用したjson編集
    - ステータスバー（ウィンドウ下部）
       - 処理状態の表示
       - エラー数（赤色）
