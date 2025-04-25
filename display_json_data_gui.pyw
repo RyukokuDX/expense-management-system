@@ -142,7 +142,14 @@ def list_json_files(directory):
 
 def read_json_file(file_path):
     with open(file_path, 'r', encoding='utf-8') as f:
-        return json.load(f)
+        data = json.load(f)
+        # submissionフィールドが存在しない場合は追加
+        if 'submission' not in data:
+            data['submission'] = ''
+            # 変更を保存
+            with open(file_path, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+        return data
 
 def parse_date(date_str):
     try:
@@ -278,7 +285,7 @@ def create_tab_content(tab_frame, files):
     canvas.configure(yscrollcommand=scrollbar.set)
     
     # ヘッダー行を作成
-    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '関連処理', '金額', 'JSON', '削除']
+    headers = ['月', '日', '経費種目', '発行元', '品目', '業者', '品番', '個数', '領収書等', '関連処理', '金額', '提出日時', 'JSON', '削除']
     for i, header in enumerate(headers):
         label = ttk.Label(scrollable_frame, text=header, font=('Helvetica', 12, 'bold'), relief="solid", borderwidth=1)
         label.grid(row=0, column=i, sticky="nsew", padx=1, pady=1)
@@ -371,8 +378,9 @@ def create_tab_content(tab_frame, files):
             receipt_text,
             '',
             price_display,
+            json_data.get('submission', ''),  # 提出日時
             f"📝 {os.path.basename(json_file)}",  # JSONボタン
-            ""  # 削除ボタン（空の文字列に変更）
+            ""  # 削除ボタン
         ]
         
         # 各列にデータを表示
@@ -381,8 +389,80 @@ def create_tab_content(tab_frame, files):
             cell_frame = ttk.Frame(scrollable_frame, relief="solid", borderwidth=1)
             cell_frame.grid(row=row, column=i, sticky="nsew", padx=1, pady=1)
             
-            # 削除列の場合は特別処理
-            if i == 12:  # 削除列の場合
+            # コピーボタンのクリックイベントを作成する関数
+            def make_copy_command(val=value, col_index=i):
+                def copy_command():
+                    # 金額の場合は「円」を除く
+                    if col_index == 10:  # 金額の列インデックス
+                        copy_value = str(val).replace('円', '').replace(',', '').strip()
+                    else:
+                        copy_value = str(val)
+                    
+                    copy_to_clipboard(copy_value)
+                    
+                    # コピーしたことを示すラベルを表示
+                    copy_label = ttk.Label(tab_frame, text=f"{headers[col_index]}: {copy_value} をコピーしました", foreground="green")
+                    copy_label.place(relx=0.5, rely=0.95, anchor="center")
+                    
+                    # 1秒後にラベルを消す
+                    root.after(1000, copy_label.destroy)
+                
+                return copy_command
+            
+            if i == 11:  # 提出日時列の場合
+                def make_submission_command(json_path=json_file, cell_frame=cell_frame):
+                    def submission_command():
+                        try:
+                            # JSONファイルを読み込む
+                            with open(json_path, 'r', encoding='utf-8') as f:
+                                data = json.load(f)
+                            
+                            # 現在の日時を設定
+                            current_time = datetime.now().strftime('%Y/%m/%d %H:%M')
+                            data['submission'] = current_time
+                            
+                            # JSONファイルを保存
+                            with open(json_path, 'w', encoding='utf-8') as f:
+                                json.dump(data, f, ensure_ascii=False, indent=2)
+                            
+                            # 表示を更新
+                            for widget in cell_frame.winfo_children():
+                                widget.destroy()
+                            
+                            # 値のラベル
+                            value_label = ttk.Label(cell_frame, text=current_time, wraplength=150)
+                            value_label.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+                            
+                            # 提出ボタン
+                            submit_button = ttk.Button(cell_frame, text="📅", width=2)
+                            submit_button.pack(side="right", padx=2, pady=2)
+                            submit_button.configure(command=submission_command)
+                            
+                            # コピーボタン
+                            copy_button = ttk.Button(cell_frame, text="📋", width=2)
+                            copy_button.pack(side="right", padx=2, pady=2)
+                            copy_button.configure(command=make_copy_command(current_time))
+                            
+                            messagebox.showinfo("成功", "提出日時を記録しました")
+                        except Exception as e:
+                            messagebox.showerror("エラー", f"提出日時の記録中にエラーが発生しました: {str(e)}")
+                    return submission_command
+                
+                # 値のラベル
+                value_label = ttk.Label(cell_frame, text=str(value), wraplength=150)
+                value_label.pack(side="left", fill="both", expand=True, padx=5, pady=5)
+                
+                # 提出ボタン
+                submit_button = ttk.Button(cell_frame, text="📅", width=2)
+                submit_button.pack(side="right", padx=2, pady=2)
+                submit_button.configure(command=make_submission_command())
+                
+                # コピーボタン
+                copy_button = ttk.Button(cell_frame, text="📋", width=2)
+                copy_button.pack(side="right", padx=2, pady=2)
+                copy_button.configure(command=make_copy_command())
+            
+            elif i == 13:  # 削除列の場合
                 def make_delete_command(json_path=json_file):
                     def delete_command():
                         # 削除確認ダイアログを表示
@@ -413,27 +493,6 @@ def create_tab_content(tab_frame, files):
                 # コピーボタン
                 copy_button = ttk.Button(cell_frame, text="📋", width=2)
                 copy_button.pack(side="right", padx=2, pady=2)
-                
-                # コピーボタンのクリックイベント
-                def make_copy_command(val=value):
-                    def copy_command():
-                        # 金額の場合は「円」を除く
-                        if i == 10:  # 金額の列インデックス
-                            copy_value = str(val).replace('円', '').strip()
-                        else:
-                            copy_value = str(val)
-                        
-                        copy_to_clipboard(copy_value)
-                        
-                        # コピーしたことを示すラベルを表示
-                        copy_label = ttk.Label(tab_frame, text=f"{headers[i]}: {copy_value} をコピーしました", foreground="green")
-                        copy_label.place(relx=0.5, rely=0.95, anchor="center")
-                        
-                        # 1秒後にラベルを消す
-                        root.after(1000, copy_label.destroy)
-                    
-                    return copy_command
-                
                 copy_button.configure(command=make_copy_command())
                 
                 # 領収書等の場合は、PDFファイルを開くボタンを追加
@@ -448,7 +507,7 @@ def create_tab_content(tab_frame, files):
                     open_button.configure(command=make_open_pdf_command())
                 
                 # JSONボタンの場合は、JSONファイルを開くボタンを追加
-                if i == 11:  # JSON列の場合
+                if i == 12:  # JSON列の場合
                     def make_edit_command(json_path=json_file):
                         def edit_command():
                             edit_json_file(json_path)
