@@ -402,10 +402,12 @@
                     <div class="tab">経費C</div>
                 </div>
                 <div class="toolbar">
-                    <div class="button">🔄 更新</div>
+                    <div class="button" onclick="openUpdateDialog()">🔄 更新</div>
                     <div class="amount">総額: ¥45,000</div>
-                    <div class="button settings">⚙️ 設定</div>
-                    <div class="button">▶️ 処理</div>
+                    <div class="button settings" onclick="openSettingDialog()">⚙️ 設定</div>
+                    <div class="button" onclick="openApplicationDialog()">▶️ 処理</div>
+                    <div class="button">🔍 非表示</div>
+                    <div class="button">🗑️ データ削除</div>
                 </div>
                 <div class="table-container">
                     <table>
@@ -414,10 +416,9 @@
                                 <th>年</th>
                                 <th>月</th>
                                 <th>日</th>
-                                <th>経費種目</th>
+                                <th>種目</th>
                                 <th>発行元</th>
                                 <th>品目</th>
-                                <th>業者</th>
                                 <th>品番</th>
                                 <th>個数</th>
                                 <th>領収書等</th>
@@ -425,7 +426,7 @@
                                 <th>金額</th>
                                 <th>処理</th>
                                 <th>JSON</th>
-                                <th>削除</th>
+                                <th>非表示</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -463,12 +464,6 @@
                                 </td>
                                 <td>
                                     <div class="cell-content">
-                                        <span class="cell-value">JR東日本</span>
-                                        <div class="copy-button">📋</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="cell-content">
                                         <span class="cell-value">-</span>
                                         <div class="copy-button">📋</div>
                                     </div>
@@ -488,8 +483,8 @@
                                     </div>
                                 </td>
                                 <td class="action-column"><div class="checkbox checked">☑</div></td>
-                                <td class="action-column"><div class="action-button">編集</div></td>
-                                <td class="action-column"><div class="delete-button">🚮</div></td>
+                                <td class="action-column"><div class="action-button" onclick="openJsonDialog()">編集</div></td>
+                                <td class="action-column"><div class="delete-button">👻</div></td>
                             </tr>
                             <tr>
                                 <td>2024</td>
@@ -525,12 +520,6 @@
                                 </td>
                                 <td>
                                     <div class="cell-content">
-                                        <span class="cell-value">ホテルX</span>
-                                        <div class="copy-button">📋</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="cell-content">
                                         <span class="cell-value">-</span>
                                         <div class="copy-button">📋</div>
                                     </div>
@@ -551,7 +540,7 @@
                                 </td>
                                 <td class="action-column"><div class="checkbox checked">☑</div></td>
                                 <td class="action-column"><div class="action-button">編集</div></td>
-                                <td class="action-column"><div class="delete-button">🚮</div></td>
+                                <td class="action-column"><div class="delete-button">👻</div></td>
                             </tr>
                             <tr>
                                 <td>2024</td>
@@ -587,12 +576,6 @@
                                 </td>
                                 <td>
                                     <div class="cell-content">
-                                        <span class="cell-value">文具店Y</span>
-                                        <div class="copy-button">📋</div>
-                                    </div>
-                                </td>
-                                <td>
-                                    <div class="cell-content">
                                         <span class="cell-value">-</span>
                                         <div class="copy-button">📋</div>
                                     </div>
@@ -613,7 +596,7 @@
                                 </td>
                                 <td class="action-column"><div class="checkbox">☐</div></td>
                                 <td class="action-column"><div class="action-button">編集</div></td>
-                                <td class="action-column"><div class="delete-button">🚮</div></td>
+                                <td class="action-column"><div class="delete-button">👻</div></td>
                             </tr>
                         </tbody>
                     </table>
@@ -622,53 +605,112 @@
                     <div class="status-item">処理状態: 正常</div>
                     <div class="status-item error">エラー: 0</div>
                     <div class="status-item warning">警告: 0</div>
-                    <div class="status-item">クリックでログ表示</div>
+                    <div class="status-item" onclick="openLogDialog()" style="cursor:pointer;">クリックでログ表示</div>
                 </div>
             </div>
         </div>
         
-        <div class="ui-section">
-            <h2>申請書作成ダイアログ</h2>
-            <div class="dialog">
-                <div class="dialog-title">申請書作成</div>
-                <div class="dialog-content">
-                    <div class="form-group">
-                        <div class="form-label">プロファイル:</div>
-                        <div style="display: flex; gap: 10px; align-items: center;">
-                            <div class="select">
-                                <div class="form-control">profile_A</div>
-                            </div>
-                            <div class="select">
-                                <div class="form-control">script_A.py</div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-label">選択項目:</div>
-                        <div class="item-list">
-                            <div class="item">2024/03/15 交通費 - 新幹線切符 (¥15,000)</div>
-                            <div class="item">2024/03/15 宿泊費 - 宿泊料 (¥30,000)</div>
-                            <div class="item">2024/03/10 消耗品費 - 文具 (¥2,500)</div>
-                        </div>
-                    </div>
-                    <div class="form-group">
-                        <div class="form-label">合計金額:</div>
-                        <div class="amount">¥45,000</div>
-                    </div>
-                </div>
-                <div class="dialog-footer">
-                    <div class="button" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
-                    <div class="button">申請書作成</div>
-                </div>
+        <!-- メイン画面の下にダイアログ本体だけを配置（見出しやui-sectionなし） -->
+
+        <!-- 更新ダイアログ -->
+        <div id="update-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">経費ファイルの更新</div>
+            <div class="dialog-content">
+                <h3>経費A</h3>
+                <table class="dialog-table">
+                    <thead>
+                        <tr>
+                            <th>ファイル名</th>
+                            <th>llm_setting選択</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>fileA1.pdf</td>
+                            <td>
+                                <select class="form-control">
+                                    <option>Setting 1</option>
+                                    <option>Setting 2</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>fileA2.pdf</td>
+                            <td>
+                                <select class="form-control">
+                                    <option>Setting 1</option>
+                                    <option>Setting 2</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+                <h3>経費B</h3>
+                <table class="dialog-table">
+                    <thead>
+                        <tr>
+                            <th>ファイル名</th>
+                            <th>llm_setting選択</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>fileB1.pdf</td>
+                            <td>
+                                <select class="form-control">
+                                    <option>Setting 1</option>
+                                    <option>Setting 2</option>
+                                </select>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeUpdateDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
+                <div class="button">更新</div>
             </div>
         </div>
-        
-        <div class="ui-section">
-            <h2>JSON編集ダイアログ</h2>
-            <div class="dialog">
-                <div class="dialog-title">JSON編集 - receipt_001.json</div>
-                <div class="dialog-content">
-                    <div class="json-editor">{
+
+        <!-- 申請書作成ダイアログ -->
+        <div id="application-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">申請書作成</div>
+            <div class="dialog-content">
+                <div class="form-group">
+                    <div class="form-label">プロファイル:</div>
+                    <div style="display: flex; gap: 10px; align-items: center;">
+                        <div class="select">
+                            <div class="form-control">profile_A</div>
+                        </div>
+                        <div class="select">
+                            <div class="form-control">script_A.py</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">選択項目:</div>
+                    <div class="item-list">
+                        <div class="item">2024/03/15 交通費 - 新幹線切符 (¥15,000)</div>
+                        <div class="item">2024/03/15 宿泊費 - 宿泊料 (¥30,000)</div>
+                        <div class="item">2024/03/10 消耗品費 - 文具 (¥2,500)</div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">合計金額:</div>
+                    <div class="amount">¥45,000</div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeApplicationDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
+                <div class="button">申請書作成</div>
+            </div>
+        </div>
+
+        <!-- JSON編集ダイアログ -->
+        <div id="json-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">JSON編集 - receipt_001.json</div>
+            <div class="dialog-content">
+                <div class="json-editor">{
   "title": "領収書A",
   "issuer": "JR東日本",
   "receiver_group": "開発部",
@@ -687,18 +729,17 @@
     }
   ]
 }</div>
-                </div>
-                <div class="dialog-footer">
-                    <div class="button">保存</div>
-                    <div class="button" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
-                </div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeJsonDialog()">保存</div>
+                <div class="button" onclick="closeJsonDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
             </div>
         </div>
-        
-        <div class="ui-section">
-            <h2>ログ表示ウィンドウ</h2>
-            <div class="log-window">
-                <div class="dialog-title">ログ表示</div>
+
+        <!-- ログ表示ダイアログ -->
+        <div id="log-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">ログ表示</div>
+            <div class="dialog-content">
                 <div class="log-content">
                     <div class="log-entry">
                         <span class="log-time">2024-03-15 10:30:45</span>
@@ -721,11 +762,81 @@
                         <span>JSONデータ保存完了: receipt_001.json</span>
                     </div>
                 </div>
-                <div class="dialog-footer">
-                    <div class="button">閉じる</div>
-                </div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeLogDialog()">閉じる</div>
+            </div>
+        </div>
+
+        <!-- 設定ダイアログ -->
+        <div id="setting-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">設定 - setting.json</div>
+            <div class="dialog-content">
+                <div class="json-editor">{
+  "table_headers": {
+    "年": "payment_date.year",
+    "月": "payment_date.month",
+    "日": "payment_date.day",
+    "経費種目": "expense_type",
+    "発行元": "issuer",
+    "品目": "items[*].product_name",
+    "業者": "items[*].provider",
+    "品番": "items[*].model",
+    "個数": "items[*].number",
+    "領収書等": "title",
+    "関連処理": "related_process",
+    "金額": "items[*].total_price"
+  },
+  "default_llm": "llm_config/gemini_receipt.json",
+  "default_profile": "profile/profileA.json",
+  "ui_settings": {
+    "theme": "light",
+    "font_size": "12px",
+    "table_row_height": "40px",
+    "copy_button": true,
+    "pdf_button": true,
+    "json_edit_button": true
+  }
+}</div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeSettingDialog()">保存</div>
+                <div class="button" onclick="closeSettingDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
             </div>
         </div>
     </div>
+
+    <script>
+    function openUpdateDialog() {
+        document.getElementById('update-dialog').style.display = 'block';
+    }
+    function closeUpdateDialog() {
+        document.getElementById('update-dialog').style.display = 'none';
+    }
+    function openApplicationDialog() {
+        document.getElementById('application-dialog').style.display = 'block';
+    }
+    function closeApplicationDialog() {
+        document.getElementById('application-dialog').style.display = 'none';
+    }
+    function openJsonDialog() {
+        document.getElementById('json-dialog').style.display = 'block';
+    }
+    function closeJsonDialog() {
+        document.getElementById('json-dialog').style.display = 'none';
+    }
+    function openLogDialog() {
+        document.getElementById('log-dialog').style.display = 'block';
+    }
+    function closeLogDialog() {
+        document.getElementById('log-dialog').style.display = 'none';
+    }
+    function openSettingDialog() {
+        document.getElementById('setting-dialog').style.display = 'block';
+    }
+    function closeSettingDialog() {
+        document.getElementById('setting-dialog').style.display = 'none';
+    }
+    </script>
 </body>
 </html> 

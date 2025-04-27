@@ -53,106 +53,6 @@
       - `process.log` 処理ログ
       - `error.log` エラーログ
 
-### 設定ファイルの構造
-
-#### setting.json
-```json
-{
-  "table_headers": {
-    "年": "payment_date.year",
-    "月": "payment_date.month",
-    "日": "payment_date.day",
-    "経費種目": "expense_type",
-    "発行元": "issuer",
-    "品目": "items[*].product_name",
-    "業者": "items[*].provider",
-    "品番": "items[*].model",
-    "個数": "items[*].number",
-    "領収書等": "title",
-    "関連処理": "related_process",
-    "金額": "items[*].total_price"
-  },
-  "default_llm": "llm_config/gemini_receipt.json",
-  "ui_settings": {
-    "theme": "light",
-    "font_size": "12px",
-    "table_row_height": "40px",
-    "copy_button": true,
-    "pdf_button": true,
-    "json_edit_button": true
-  }
-}
-```
-
-#### llm_config/gemini_receipt.json
-```json
-{
-  "name": "Gemini API設定（領収書用）",
-  "description": "Google Gemini APIの設定（領収書解析用）",
-  "version": "1.0",
-  "api_type": "gemini",
-  "model": "gemini-1.5-pro-vision",
-  "api_key_source": "environment",
-  "api_key_env_var": "GeminiApiKey",
-  "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent",
-  "headers": {
-    "Content-Type": "application/json"
-  },
-  "timeout": 30,
-  "max_retries": 3,
-  "prompt": {
-    "name": "領収書解析プロンプト",
-    "description": "領収書から情報を抽出するためのプロンプト",
-    "version": "1.0",
-    "prompt_template": "領収書または納品書の情報を解析し、購入項目ごとに以下の形式でJSONに構造化してください。ただし、以下の処理を施してください。\n+ 金額の部分はカンマがあれば除いてください\n+ 金額が0の項目は無視してください\n\n{ \"title\": \"領収書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }",
-    "output_format": {
-      "title": "string",
-      "issuer": "string",
-      "receiver_group": "string",
-      "receiver_name": "string",
-      "total_amount": "string",
-      "payment_date": "string (YYYY/MM/DD)",
-      "items": [
-        {
-          "product_name": "string",
-          "provider": "string",
-          "model": "string",
-          "unite_price": "string",
-          "total_price": "string",
-          "number": "string",
-          "delivery_date": "string (YYYY/MM/DD) or null"
-        }
-      ]
-    }
-  }
-}
-```
-
-#### applications/20240315_1430/application.json
-```json
-{
-  "profile": "profile_A",
-  "application_year": 2024,
-  "application_month": 3,
-  "application_date": 15,
-  "application_time": "14:30",
-  "application_items": [
-    {
-      "json_path": "registered/receipt_001/receipt_001.json",
-      "item_num": 0
-    },
-    {
-      "json_path": "registered/receipt_002/receipt_002.json",
-      "item_num": 0
-    }
-  ],
-  "status": "pending",
-  "created_at": "2024-03-15T14:30:00",
-  "updated_at": "2024-03-15T14:30:00",
-  "process_output": "expense_form.pdf"
-}
-```
-
 ### `display_json_data_gui.pyw` によるUI構成
 
 `display_json_data_gui.pyw`はTkinterを用いて、
@@ -167,6 +67,18 @@ viewは次のように構成されます：
       - 処理ボタン: processのスクリプトを選択して実行するボタン。対象は処理対象☑が入っているもの
          - 申請書作成
          - 領収書データ以外の書類を利用したjson編集
+      - 非表示ボタン: 非表示のアイテムを表示させる
+      - 削除ボタン(仕様検討中): 項目ではなく、領収書と申請書の削除を行うダイアログを表示する
+         - 項目単位の削除は非表示か、ユーザーによるjsonの直接編集で行う
+         - 削除する申請書、領収書を選択させる
+         - 申請書の削除の場合
+            - 申請書の参照先のitemのapplicationフィールドの値を空白に設定する
+            - ディレクトリを削除
+            - logに追加(削除したjsonの内容もlogに記載？)
+         - 領収書データの場合
+            - 全ての項目のapplicationフィールドが空なら削除
+            - applicationフィールどが空でない場合は、警告して停止
+            - 削除結果をログに記載　
    - 表
       - カラム構成
          - setting.json内のレシピに従って表示
@@ -226,6 +138,128 @@ viewは次のように構成されます：
 - ユーザーへの通知
 - 可能な場合は代替処理の実行
 - 処理の中断と再開ポイントの提供
+
+### 設定ファイルの構造
+
+#### setting.json
+```json
+{
+  "table_headers": {
+    "年": "payment_date.year",
+    "月": "payment_date.month",
+    "日": "payment_date.day",
+    "経費種目": "expense_type",
+    "発行元": "issuer",
+    "品目": "items[*].product_name",
+    "業者": "items[*].provider",
+    "品番": "items[*].model",
+    "個数": "items[*].number",
+    "領収書等": "title",
+    "関連処理": "related_process",
+    "金額": "items[*].total_price"
+  },
+  "default_llm": "llm_config/gemini_receipt.json",
+  "default_profile": "profile/profileA.json",
+  "ui_settings": {
+    "theme": "light",
+    "font_size": "12px",
+    "table_row_height": "40px",
+    "copy_button": true,
+    "pdf_button": true,
+    "json_edit_button": true
+  }
+}
+```
+
+#### llm_config/gemini_receipt.json(sample)
+```json
+{
+  "name": "Gemini API設定（領収書用）",
+  "description": "Google Gemini APIの設定（領収書解析用）",
+  "version": "1.0",
+  "api_type": "gemini",
+  "model": "gemini-1.5-pro-vision",
+  "api_key_source": "environment",
+  "api_key_env_var": "GeminiApiKey",
+  "endpoint": "https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-001:generateContent",
+  "headers": {
+    "Content-Type": "application/json"
+  },
+  "timeout": 30,
+  "max_retries": 3,
+  "prompt": {
+    "name": "領収書解析プロンプト",
+    "description": "領収書から情報を抽出するためのプロンプト",
+    "version": "1.0",
+    "prompt_template": "領収書または納品書の情報を解析し、購入項目ごとに以下の形式でJSONに構造化してください。ただし、以下の処理を施してください。\n+ 金額の部分はカンマがあれば除いてください\n+ 金額が0の項目は無視してください\n\n{ \"title\": \"領収書タイトル\", \"issuer\": \"発行者情報\", \"receiver_group\": \"受領者所属\", \"receiver_name\": \"受領者氏名(敬称、空白は除く)\", \"total_amount\": \"合計金額\", \"payment_date\": \"支払日\", \"items\": [ { \"product_name\": \"製品名(型番は抜く)\", \"provider\": \"メーカー\", \"model\": \"型番\", \"unite_price\": \"単価\", \"total_price\": \"金額\", \"number\": \"個数\", \"delivery_date\": \"発送日\" } ] }",
+    "output_format": {
+      "title": "string",
+      "issuer": "string",
+      "receiver_group": "string",
+      "receiver_name": "string",
+      "total_amount": "string",
+      "payment_date": "string (YYYY/MM/DD)",
+      "items": [
+        {
+          "product_name": "string",
+          "provider": "string",
+          "model": "string",
+          "unite_price": "string",
+          "total_price": "string",
+          "number": "string",
+          "delivery_date": "string (YYYY/MM/DD) or null"
+        }
+      ]
+    }
+  }
+}
+```
+
+### 領収書JSONサンプル
+
+#### registered/receiptA/receiptA.json (sample)
+```json
+{
+  "title": "領収書",
+  "issuer": "株式会社文具堂",
+  "receiver_group": "情報システム部",
+  "receiver_name": "山田太郎",
+  "total_amount": "11000",
+  "payment_year": "2024",
+  "payment_month": "2",
+  "payment_date": "29",
+  "items": [
+    {
+      "product_name": "ノート",
+      "provider": "コクヨ",
+      "model": "A4-NO-123",
+      "unite_price": "500",
+      "total_price": "5000",
+      "number": "10",
+      "delivery_year": "2024",
+      "delivery_month": "2",
+      "delivery_date": "29",
+      "display" : TRUE,
+      "application": , #値は処理時に追加
+      "memo": "" # 値はuserが追加
+    },
+    {
+      "product_name": "ボールペン",
+      "provider": "パイロット",
+      "model": "BP-456",
+      "unite_price": "300",
+      "total_price": "6000",
+      "number": "20",
+      "delivery_year": "2024",
+      "delivery_month": "2",
+      "delivery_date": "29",
+      "display" : TRUE,
+      "application": , #値は処理時に追加
+      "memo": "" # 値はuserが追加
+    }
+  ]
+}
+```
 
 ### ログ機能
 
@@ -322,7 +356,7 @@ graph TD
 - カード支払情報など、領収書データ以外のものを参照する場合の処理
 - setting.jsonでのjsonの対象データを指定する必要はるか
 - 領収書内に、複数の商品があった場合の処理をどうするか
-   - 削除表示フィールどを追加して、項目単位の削除に対応か
+   - `display`フィールどを追加して、項目単位の表示に対応
 
 ## 技術スタック
 
