@@ -407,7 +407,7 @@
                     <div class="button settings" onclick="openSettingDialog()">⚙️ 設定</div>
                     <div class="button" onclick="openApplicationDialog()">▶️ 処理</div>
                     <div class="button">🔍 非表示</div>
-                    <div class="button">🗑️ データ削除</div>
+                    <div class="button" onclick="openDeleteDialog()">🗑️ データ削除</div>
                 </div>
                 <div class="table-container">
                     <table>
@@ -804,6 +804,42 @@
                 <div class="button" onclick="closeSettingDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
             </div>
         </div>
+
+        <!-- データ削除ダイアログ -->
+        <div id="delete-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">データ削除</div>
+            <div class="dialog-content">
+                <div class="form-group">
+                    <div class="form-label">削除対象の選択:</div>
+                    <div class="item-list">
+                        <div class="item">
+                            <input type="checkbox" id="delete-receipt-1">
+                            <label for="delete-receipt-1">領収書: receipt_001.pdf (¥15,000)</label>
+                        </div>
+                        <div class="item">
+                            <input type="checkbox" id="delete-receipt-2">
+                            <label for="delete-receipt-2">領収書: receipt_002.pdf (¥30,000)</label>
+                        </div>
+                        <div class="item">
+                            <input type="checkbox" id="delete-application-1">
+                            <label for="delete-application-1">申請書: 20240315_1430/application.json (¥45,000)</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <div class="form-label">注意事項:</div>
+                    <div style="color: #cc0000; margin-top: 5px;">
+                        - 申請書を削除する場合、関連する領収書の申請情報がクリアされます<br>
+                        - 申請済みの領収書は削除できません<br>
+                        - 削除したデータは復元できません
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeDeleteDialog()">削除</div>
+                <div class="button" onclick="closeDeleteDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -836,6 +872,12 @@
     }
     function closeSettingDialog() {
         document.getElementById('setting-dialog').style.display = 'none';
+    }
+    function openDeleteDialog() {
+        document.getElementById('delete-dialog').style.display = 'block';
+    }
+    function closeDeleteDialog() {
+        document.getElementById('delete-dialog').style.display = 'none';
     }
     </script>
 </body>
