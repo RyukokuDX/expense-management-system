@@ -386,6 +386,86 @@
         th:nth-child(13), td:nth-child(13) { width: 60px; } /* 処理 */
         th:nth-child(14), td:nth-child(14) { width: 60px; } /* JSON */
         th:nth-child(15), td:nth-child(15) { width: 40px; } /* 削除 */
+        .hidden-row {
+            display: none;
+            background-color: #f0f0f0;
+        }
+        
+        .action-column {
+            position: relative;
+            min-width: 40px;
+        }
+
+        .button-legend {
+            margin-top: 20px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border: 1px solid #a0a0a0;
+        }
+
+        .button-legend h3 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+
+        .button-legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 5px;
+        }
+
+        .button-legend-icon {
+            display: inline-block;
+            padding: 2px 5px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
+            margin-right: 10px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .button-legend-description {
+            color: #666;
+        }
+
+        .button-description {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background-color: #f0f0f0;
+            border-top: 1px solid #a0a0a0;
+            padding: 10px;
+            display: none;
+            z-index: 1000;
+        }
+
+        .button-description-content {
+            display: flex;
+            align-items: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .button-description-robot {
+            font-size: 24px;
+            margin-right: 15px;
+            color: #666;
+        }
+
+        .button-description-icon {
+            display: inline-block;
+            padding: 2px 5px;
+            background-color: #d4d0c8;
+            border: 1px solid #a0a0a0;
+            margin-right: 10px;
+            min-width: 30px;
+            text-align: center;
+        }
+
+        .button-description-text {
+            color: #666;
+        }
     </style>
 </head>
 <body>
@@ -406,8 +486,9 @@
                     <div class="amount">総額: ¥45,000</div>
                     <div class="button settings" onclick="openSettingDialog()">⚙️ 設定</div>
                     <div class="button" onclick="openApplicationDialog()">▶️ 処理</div>
-                    <div class="button">🔍 非表示</div>
+                    <div class="button" onclick="toggleHiddenItems()">🔍 非表示</div>
                     <div class="button" onclick="openDeleteDialog()">🗑️ データ削除</div>
+                    <div class="button" onclick="openHelpDialog()">❓ ヘルプ</div>
                 </div>
                 <div class="table-container">
                     <table>
@@ -430,7 +511,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            <tr>
+                            <tr id="row-1">
                                 <td>2024</td>
                                 <td>
                                     <div class="cell-content">
@@ -484,9 +565,9 @@
                                 </td>
                                 <td class="action-column"><div class="checkbox checked">☑</div></td>
                                 <td class="action-column"><div class="action-button" onclick="openJsonDialog()">編集</div></td>
-                                <td class="action-column"><div class="delete-button">👻</div></td>
+                                <td class="action-column"><div class="delete-button" onclick="toggleRowVisibility('row-1')">👻</div></td>
                             </tr>
-                            <tr>
+                            <tr id="row-2">
                                 <td>2024</td>
                                 <td>
                                     <div class="cell-content">
@@ -540,9 +621,9 @@
                                 </td>
                                 <td class="action-column"><div class="checkbox checked">☑</div></td>
                                 <td class="action-column"><div class="action-button">編集</div></td>
-                                <td class="action-column"><div class="delete-button">👻</div></td>
+                                <td class="action-column"><div class="delete-button" onclick="toggleRowVisibility('row-2')">👻</div></td>
                             </tr>
-                            <tr>
+                            <tr id="row-3">
                                 <td>2024</td>
                                 <td>
                                     <div class="cell-content">
@@ -596,7 +677,7 @@
                                 </td>
                                 <td class="action-column"><div class="checkbox">☐</div></td>
                                 <td class="action-column"><div class="action-button">編集</div></td>
-                                <td class="action-column"><div class="delete-button">👻</div></td>
+                                <td class="action-column"><div class="delete-button" onclick="toggleRowVisibility('row-3')">👻</div></td>
                             </tr>
                         </tbody>
                     </table>
@@ -840,6 +921,63 @@
                 <div class="button" onclick="closeDeleteDialog()" style="background-color: #d4d0c8; color: #000;">キャンセル</div>
             </div>
         </div>
+
+        <!-- ヘルプダイアログ -->
+        <div id="help-dialog" class="dialog" style="display:none; position:fixed; top:50%; left:50%; transform:translate(-50%,-50%); z-index:1000;">
+            <div class="dialog-title">ヘルプ - ボタンの説明</div>
+            <div class="dialog-content">
+                <div class="button-legend">
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">🔄</div>
+                        <div class="button-legend-description">更新: 経費ファイルの更新ダイアログを表示</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">⚙️</div>
+                        <div class="button-legend-description">設定: アプリケーションの設定を変更</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">▶️</div>
+                        <div class="button-legend-description">処理: 申請書作成ダイアログを表示</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">🔍</div>
+                        <div class="button-legend-description">非表示: 非表示項目の表示/非表示を切り替え</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">🗑️</div>
+                        <div class="button-legend-description">データ削除: 領収書と申請書の削除ダイアログを表示</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">👻</div>
+                        <div class="button-legend-description">非表示: 項目を非表示にする</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">♻️</div>
+                        <div class="button-legend-description">表示: 非表示項目を表示する</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">📋</div>
+                        <div class="button-legend-description">コピー: セルの内容をクリップボードにコピー</div>
+                    </div>
+                    <div class="button-legend-item">
+                        <div class="button-legend-icon">☑</div>
+                        <div class="button-legend-description">処理対象: 申請書作成の対象項目</div>
+                    </div>
+                </div>
+            </div>
+            <div class="dialog-footer">
+                <div class="button" onclick="closeHelpDialog()">閉じる</div>
+            </div>
+        </div>
+
+        <!-- ボタンの説明 -->
+        <div id="button-description" class="button-description">
+            <div class="button-description-content">
+                <div class="button-description-robot">🤖</div>
+                <div class="button-description-icon"></div>
+                <div class="button-description-text"></div>
+            </div>
+        </div>
     </div>
 
     <script>
@@ -879,6 +1017,129 @@
     function closeDeleteDialog() {
         document.getElementById('delete-dialog').style.display = 'none';
     }
+    function openHelpDialog() {
+        document.getElementById('help-dialog').style.display = 'block';
+    }
+    function closeHelpDialog() {
+        document.getElementById('help-dialog').style.display = 'none';
+    }
+
+    // 非表示状態を管理する変数
+    let showHiddenItems = false;
+
+    function toggleHiddenItems() {
+        showHiddenItems = !showHiddenItems;
+        const hiddenRows = document.querySelectorAll('.hidden-row');
+        hiddenRows.forEach(row => {
+            row.style.display = showHiddenItems ? 'table-row' : 'none';
+        });
+        
+        // 非表示ボタンのテキストを更新
+        const toggleButton = document.querySelector('.button[onclick="toggleHiddenItems()"]');
+        toggleButton.textContent = showHiddenItems ? '🔍 表示中' : '🔍 非表示';
+    }
+
+    // 非表示状態を切り替える関数
+    function toggleRowVisibility(rowId) {
+        const row = document.getElementById(rowId);
+        if (row) {
+            row.classList.toggle('hidden-row');
+            row.style.display = showHiddenItems ? 'table-row' : 'none';
+            updateHiddenButtonIcon(rowId);
+        }
+    }
+
+    // 非表示ボタンのアイコンを更新する関数
+    function updateHiddenButtonIcon(rowId) {
+        const row = document.getElementById(rowId);
+        const deleteButton = row.querySelector('.delete-button');
+        
+        if (row.classList.contains('hidden-row')) {
+            deleteButton.textContent = '♻️';
+        } else {
+            deleteButton.textContent = '👻';
+        }
+    }
+
+    // 初期表示時に非表示ボタンのアイコンを更新
+    document.addEventListener('DOMContentLoaded', function() {
+        const rows = document.querySelectorAll('tr[id^="row-"]');
+        rows.forEach(row => {
+            updateHiddenButtonIcon(row.id);
+        });
+    });
+
+    // ボタンの説明を表示する関数
+    function showButtonDescription(icon, description) {
+        const descriptionElement = document.getElementById('button-description');
+        const iconElement = descriptionElement.querySelector('.button-description-icon');
+        const textElement = descriptionElement.querySelector('.button-description-text');
+        
+        iconElement.textContent = icon;
+        textElement.textContent = description;
+        descriptionElement.style.display = 'block';
+    }
+
+    // ボタンの説明を非表示にする関数
+    function hideButtonDescription() {
+        const descriptionElement = document.getElementById('button-description');
+        descriptionElement.style.display = 'none';
+    }
+
+    // ボタンにマウスイベントを追加
+    document.addEventListener('DOMContentLoaded', function() {
+        // ツールバーのボタン
+        const toolbarButtons = document.querySelectorAll('.toolbar .button');
+        toolbarButtons.forEach(button => {
+            const icon = button.textContent.trim();
+            let description = '';
+            
+            switch(icon) {
+                case '🔄 更新':
+                    description = '経費ファイルの更新ダイアログを表示';
+                    break;
+                case '⚙️ 設定':
+                    description = 'アプリケーションの設定を変更';
+                    break;
+                case '▶️ 処理':
+                    description = '申請書作成ダイアログを表示';
+                    break;
+                case '🔍 非表示':
+                    description = '非表示項目の表示/非表示を切り替え';
+                    break;
+                case '🗑️ データ削除':
+                    description = '領収書と申請書の削除ダイアログを表示';
+                    break;
+            }
+            
+            button.addEventListener('mouseenter', () => showButtonDescription(icon, description));
+            button.addEventListener('mouseleave', hideButtonDescription);
+        });
+        
+        // 非表示ボタン
+        const deleteButtons = document.querySelectorAll('.delete-button');
+        deleteButtons.forEach(button => {
+            const icon = button.textContent.trim();
+            const description = icon === '👻' ? '項目を非表示にする' : '非表示項目を表示する';
+            
+            button.addEventListener('mouseenter', () => showButtonDescription(icon, description));
+            button.addEventListener('mouseleave', hideButtonDescription);
+        });
+        
+        // コピーボタン
+        const copyButtons = document.querySelectorAll('.copy-button');
+        copyButtons.forEach(button => {
+            button.addEventListener('mouseenter', () => showButtonDescription('📋', 'セルの内容をクリップボードにコピー'));
+            button.addEventListener('mouseleave', hideButtonDescription);
+        });
+        
+        // チェックボックス
+        const checkboxes = document.querySelectorAll('.checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('mouseenter', () => showButtonDescription('☑', '申請書作成の対象項目'));
+            checkbox.addEventListener('mouseleave', hideButtonDescription);
+        });
+    });
     </script>
 </body>
 </html> 
