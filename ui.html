@@ -482,13 +482,12 @@
                     <div class="tab">経費C</div>
                 </div>
                 <div class="toolbar">
-                    <div class="button" onclick="openUpdateDialog()">🔄 更新</div>
-                    <div class="amount">総額: ¥45,000</div>
-                    <div class="button settings" onclick="openSettingDialog()">⚙️ 設定</div>
-                    <div class="button" onclick="openApplicationDialog()">▶️ 処理</div>
-                    <div class="button" onclick="toggleHiddenItems()">🔍 非表示</div>
-                    <div class="button" onclick="openDeleteDialog()">🗑️ データ削除</div>
-                    <div class="button" onclick="openHelpDialog()">❓ ヘルプ</div>
+                    <button class="button" id="newButton">新規作成</button>
+                    <button class="button" id="editButton">編集</button>
+                    <button class="button" id="deleteButton">削除</button>
+                    <button class="button" id="exportCsvButton">CSV出力</button>
+                    <button class="button settings" id="settingsButton">⚙️ 設定</button>
+                    <span class="amount">合計: ¥0</span>
                 </div>
                 <div class="table-container">
                     <table>
