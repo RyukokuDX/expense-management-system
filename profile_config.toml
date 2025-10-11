@@ -1,0 +1,9 @@
+# プロフィール情報設定ファイル
+# Excel dataに記載するためのもの
+
+[expendidture.personal.profile]
+description = "個人研究費に用いるプロファイル"
+affiliation_position = "数理・情報科学過程・准教授"
+staff_number = "a23036"
+applicant = "藤原和将"
+research_representative = "藤原和将"
